@@ -32,6 +32,13 @@ enum STATE {
   STOPPED
 };
 
+// run Mode States
+enum runMode {
+  turnLeft,
+  turnRight,
+  driveForward
+};
+
 //Refer to Shield Pinouts.jpg for pin locations
 
 //Default motor control pins
@@ -99,6 +106,52 @@ void loop(void) //main loop
   };
 }
 
+STATE leftLeft() {
+  // CCW Turn
+  if (isAlligned == false){
+    //turnCCW();
+    left_font_motor.writeMicroseconds(1500 - speed_val);
+    left_rear_motor.writeMicroseconds(1500 - speed_val);
+    right_rear_motor.writeMicroseconds(1500 - speed_val);
+    right_font_motor.writeMicroseconds(1500 - speed_val);
+  }
+  else {
+    return driveForward;
+  }
+  return turnLeft
+}
+
+STATE rightRight () {
+  checkRightTurn(); // make these functions
+  if (turnCompleted == true){
+    return driveForward;
+  }
+  else {
+    //turnCW();
+    left_font_motor.writeMicroseconds(1500 + speed_val);
+    left_rear_motor.writeMicroseconds(1500 + speed_val);
+    right_rear_motor.writeMicroseconds(1500 + speed_val);
+    right_font_motor.writeMicroseconds(1500 + speed_val);
+  }
+  return rightRight;
+}
+
+STATE driveForward () {
+  checkForward();
+  if (checkForward == true){
+    return turnRight;
+  }
+  else {
+    //driveStraight();
+    left_font_motor.writeMicroseconds(1500 + speed_val);
+    left_rear_motor.writeMicroseconds(1500 + speed_val);
+    right_rear_motor.writeMicroseconds(1500 - speed_val);
+    right_font_motor.writeMicroseconds(1500 - speed_val);
+  }
+  return driveForward;
+}
+
+
 
 STATE initialising() {
   //initialising
@@ -117,6 +170,18 @@ STATE running() {
   read_serial_command();
   fast_flash_double_LED_builtin();
 
+  static STATE motorMode = leftTurn;
+  state (motorMode){
+    case leftTurn:
+      motorMode = leftLeft();
+      break;
+    case turnRight:
+      motorMode = rightRight();
+      break;
+    case driveForward:
+      motorMode = zoomZoom();
+      break;
+  }
   if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
     previous_millis = millis();
 
@@ -136,7 +201,7 @@ STATE running() {
     if (!is_battery_voltage_OK()) return STOPPED;
 #endif
 
-
+// I think this moves the servo motor given? not wheel
     turret_motor.write(pos);
 
     if (pos == 0)

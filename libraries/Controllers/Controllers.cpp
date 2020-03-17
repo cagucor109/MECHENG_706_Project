@@ -1,7 +1,7 @@
 #include "Controllers.h"
 
 // constructors
-Controllers::EdgeFollower(){
+Controllers::Controllers(){
     desiredDistFront_ = 150;
     desiredDistRight_ = 150;
     desiredAngle_ = 0;

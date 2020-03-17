@@ -18,7 +18,7 @@
 class Controllers {
 public:
     // constructors
-    EdgeFollower();
+    Controllers();
 
     // setters
     void setDesiredDistFront(double distance);

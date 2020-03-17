@@ -17,7 +17,7 @@ void Controllers::setDesiredDistRight(double distance){
 }
 
 void Controllers::setDesiredAngle(double angle){
-    desiredAmgle_ = angle;
+    desiredAngle_ = angle;
 }
 
 // getters

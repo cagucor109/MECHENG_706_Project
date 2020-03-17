@@ -57,13 +57,14 @@ Servo turret_motor;
 
 int speed_val = 100;
 int speed_change;
+float Coefficents[3] = {0.4368, 0.0371, 0.0182};
 
 //Serial Pointer
 HardwareSerial *SerialCom;
 
 int pos = 0;
 
-#define P_GAIN 1
+#define P_GAIN 10
 int front_back_error = 0;
 int correction = 0;
 
@@ -71,14 +72,14 @@ void setup(void)
 {
   turret_motor.attach(11);
   pinMode(LED_BUILTIN, OUTPUT);
-
+  pinMode(A4, INPUT);
   // The Trigger pin will tell the sensor to range find
   pinMode(TRIG_PIN, OUTPUT);
   digitalWrite(TRIG_PIN, LOW);
 
   // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
   SerialCom = &Serial1;
-  SerialCom->begin(115200);
+  Serial.begin(115200);
   SerialCom->println("MECHENG706_Base_Code_25/01/2018");
   delay(1000);
   SerialCom->println("Setup....");
@@ -89,7 +90,7 @@ void setup(void)
 
 void loop(void) //main loop
 {
-  
+  enable_motors();
   edgeFollow();
   delay(50);
 }
@@ -107,111 +108,13 @@ void control_input_P(){
 // read difference betwenn distance to wall at the front or at the back of robot
 // this is where the sensor readings go
 void read_front_back_error(){
-  int front_reading = ;
-  int back_reading = ;
+  float front_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A4))));
+  Serial.print("The front distance value is: ");
+  Serial.println(front_reading);
+  int back_reading = 15;
+  Serial.print("The back distance value is: ");
+  Serial.println(back_reading);
   front_back_error = front_reading - back_reading;
-}
-STATE initialising() {
-  //initialising
-  SerialCom->println("INITIALISING....");
-  delay(1000); //One second delay to see the serial string "INITIALISING...."
-  SerialCom->println("Enabling Motors...");
-  enable_motors();
-  SerialCom->println("RUNNING STATE...");
-  return RUNNING;
-}
-
-STATE running() {
-
-  static unsigned long previous_millis;
-
-  read_serial_command();
-  fast_flash_double_LED_builtin();
-
-  if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
-    previous_millis = millis();
-
-    SerialCom->println("RUNNING---------");
-    speed_change_smooth();
-    Analog_Range_A4();
-
-#ifndef NO_READ_GYRO
-    GYRO_reading();
-#endif
-
-#ifndef NO_HC-SR04
-    HC_SR04_range();
-#endif
-
-#ifndef NO_BATTERY_V_OK
-    if (!is_battery_voltage_OK()) return STOPPED;
-#endif
-
-
-    turret_motor.write(pos);
-
-    if (pos == 0)
-    {
-      pos = 45;
-    }
-    else
-    {
-      pos = 0;
-    }
-  }
-
-  return RUNNING;
-}
-
-//Stop of Lipo Battery voltage is too low, to protect Battery
-STATE stopped() {
-  static byte counter_lipo_voltage_ok;
-  static unsigned long previous_millis;
-  int Lipo_level_cal;
-  disable_motors();
-  slow_flash_LED_builtin();
-
-  if (millis() - previous_millis > 500) { //print massage every 500ms
-    previous_millis = millis();
-    SerialCom->println("STOPPED---------");
-
-
-#ifndef NO_BATTERY_V_OK
-    //500ms timed if statement to check lipo and output speed settings
-    if (is_battery_voltage_OK()) {
-      SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
-      SerialCom->println(counter_lipo_voltage_ok);
-      counter_lipo_voltage_ok++;
-      if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
-        counter_lipo_voltage_ok = 0;
-        enable_motors();
-        SerialCom->println("Lipo OK returning to RUN STATE");
-        return RUNNING;
-      }
-    } else
-    {
-      counter_lipo_voltage_ok = 0;
-    }
-#endif
-  }
-  return STOPPED;
-}
-
-void fast_flash_double_LED_builtin()
-{
-  static byte indexer = 0;
-  static unsigned long fast_flash_millis;
-  if (millis() > fast_flash_millis) {
-    indexer++;
-    if (indexer > 4) {
-      fast_flash_millis = millis() + 700;
-      digitalWrite(LED_BUILTIN, LOW);
-      indexer = 0;
-    } else {
-      fast_flash_millis = millis() + 100;
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
-  }
 }
 
 void slow_flash_LED_builtin()
@@ -338,10 +241,20 @@ void HC_SR04_range()
 }
 #endif
 
-void Analog_Range_A4()
-{
-  SerialCom->print("Analog Range A4:");
-  SerialCom->println(analogRead(A4));
+float ReadIR() {
+  return analogRead(A4);
+}
+
+float CalcVoltage(float readValue) {
+  return readValue * 5 / 1023;
+}
+
+float CalcInvDist( float Voltage) {
+  return (Coefficents[2] * Voltage * Voltage) + (Coefficents[1] * Voltage) + Coefficents[0];//currently uses a second order polynomial fitting.
+}
+
+float CalcDist ( float InvDist) {
+  return 1 / (InvDist - .42);
 }
 
 #ifndef NO_READ_GYRO
@@ -387,6 +300,8 @@ void stop() //Stop
 
 void align(){
   //positive correction will turn anticlockwise
+  Serial.print("Correction: ");
+  Serial.println(correction);
   left_font_motor.writeMicroseconds(1500 + speed_val - correction);
   left_rear_motor.writeMicroseconds(1500 + speed_val - correction);
   right_rear_motor.writeMicroseconds(1500 - speed_val - correction);

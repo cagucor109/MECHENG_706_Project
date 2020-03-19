@@ -21,14 +21,14 @@
 */
 
 #define wheelRadius 24
-#define dim 180
+#define dim 1.3889
 #include <Servo.h>  //Need for Servo pulse output
 
 #define NO_READ_GYRO  //Uncomment of GYRO is not attached.
 #define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-void directionControl (double control_x, double control v_y, double w, double *motorPower);
+void directionControl (double control_x, double control_y, double w, double *motorPower);
 
 
 //State machine states
@@ -372,7 +372,7 @@ void read_serial_command()
         reverse ();
         SerialCom->println("Backwards");
         break;
-      case 'q'://Turn Left
+      case 'q'://Turn Left`
       case 'Q':
         strafe_left();
         SerialCom->println("Strafe Left");
@@ -447,8 +447,8 @@ void stop() //Stop
 //new stuff
 void directionControl (double control_x, double control_y, double w, double *motorPower) {
      
-  *motorPower = (control_x + control_y - dim*w);
-  *(motorPower+1) = (control_x - control_y + dim*w);
+  *motorPower = (control_x - control_y + dim*w);
+  *(motorPower+1) = (control_x + control_y + dim*w);
   *(motorPower+2) = (-control_x + control_y + dim*w);
   *(motorPower+3) = (-control_x - control_y - dim*w);
 
@@ -464,24 +464,30 @@ void directionControl (double control_x, double control_y, double w, double *mot
 
 void forward()
 {
- 
-       double motorPower[4] = {0,1,2,3};
-       Serial.println("fresh");
-            Serial.println(motorPower[0]);
-     Serial.println(motorPower[1]);
-     Serial.println(motorPower[2]);
-     Serial.println(motorPower[3]);
-     directionControl(500,0,0, motorPower);  
+  
+  double motorPower[4] = {0,1,2,3};
+  float x_co = 0.0;
+  float y_co = 0.0;
+
+  Serial.println("Enter x component");   
+  while(Serial.available()==0) {} //wait for user input
+  x_co=Serial.parseFloat(); // read input
+      
+  Serial.println("Enter y component");   
+  while(Serial.available()==0) {}
+  y_co=Serial.parseFloat();  
+      
+     directionControl(x_co,y_co,0, motorPower);  
      Serial.println("when it comes out");
      Serial.println(motorPower[0],4);
      Serial.println(motorPower[1],4);
      Serial.println(motorPower[2],4);
      Serial.println(motorPower[3],4 );
 
-     left_font_motor.writeMicroseconds(1500 + motorPower[0]);
+  left_font_motor.writeMicroseconds(1500 + motorPower[0]);
   left_rear_motor.writeMicroseconds(1500 + motorPower[2]);
   right_rear_motor.writeMicroseconds(1500 + motorPower[3]);
- right_font_motor.writeMicroseconds(1500 + motorPower[1]);
+  right_font_motor.writeMicroseconds(1500 + motorPower[1]);
  
 }
 

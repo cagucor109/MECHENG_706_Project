@@ -1,5 +1,5 @@
 /*
-  MechEng 706 Base Code - This is Carlos
+  MechEng 706 Base Code
 
   This code provides basic movement and sensor reading for the MechEng 706 Mecanum Wheel Robot Project
 
@@ -19,6 +19,9 @@
   Modified: 15/02/2018
   Author: Logan Stuart
 */
+
+#define wheelRadius 24
+#define dim 1.3889
 #include <Servo.h>  //Need for Servo pulse output
 
 //#define NO_READ_GYRO  //Uncomment of GYRO is not attached.
@@ -30,13 +33,6 @@ enum STATE {
   INITIALISING,
   RUNNING,
   STOPPED
-};
-
-// run Mode States
-enum runMode {
-  turnLeft,
-  turnRight,
-  driveForward
 };
 
 //Refer to Shield Pinouts.jpg for pin locations
@@ -69,6 +65,13 @@ int speed_change;
 HardwareSerial *SerialCom;
 
 int pos = 0;
+//stuff for edge follow
+#define P_GAIN 10
+int front_back_error = 0;
+int correction = 0;
+float Coefficents[3] = {0.4368, 0.0371, 0.0182};
+
+
 void setup(void)
 {
   turret_motor.attach(11);
@@ -79,7 +82,7 @@ void setup(void)
   digitalWrite(TRIG_PIN, LOW);
 
   // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
-  SerialCom = &Serial1;
+  SerialCom = &Serial;
   SerialCom->begin(115200);
   SerialCom->println("MECHENG706_Base_Code_25/01/2018");
   delay(1000);
@@ -106,52 +109,6 @@ void loop(void) //main loop
   };
 }
 
-STATE leftLeft() {
-  // CCW Turn
-  if (isAlligned == false){
-    //turnCCW();
-    left_font_motor.writeMicroseconds(1500 - speed_val);
-    left_rear_motor.writeMicroseconds(1500 - speed_val);
-    right_rear_motor.writeMicroseconds(1500 - speed_val);
-    right_font_motor.writeMicroseconds(1500 - speed_val);
-  }
-  else {
-    return driveForward;
-  }
-  return turnLeft
-}
-
-STATE rightRight () {
-  checkRightTurn(); // make these functions
-  if (turnCompleted == true){
-    return driveForward;
-  }
-  else {
-    //turnCW();
-    left_font_motor.writeMicroseconds(1500 + speed_val);
-    left_rear_motor.writeMicroseconds(1500 + speed_val);
-    right_rear_motor.writeMicroseconds(1500 + speed_val);
-    right_font_motor.writeMicroseconds(1500 + speed_val);
-  }
-  return rightRight;
-}
-
-STATE driveForward () {
-  checkForward();
-  if (checkForward == true){
-    return turnRight;
-  }
-  else {
-    //driveStraight();
-    left_font_motor.writeMicroseconds(1500 + speed_val);
-    left_rear_motor.writeMicroseconds(1500 + speed_val);
-    right_rear_motor.writeMicroseconds(1500 - speed_val);
-    right_font_motor.writeMicroseconds(1500 - speed_val);
-  }
-  return driveForward;
-}
-
-
 
 STATE initialising() {
   //initialising
@@ -170,18 +127,6 @@ STATE running() {
   read_serial_command();
   fast_flash_double_LED_builtin();
 
-  static STATE motorMode = leftTurn;
-  state (motorMode){
-    case leftTurn:
-      motorMode = leftLeft();
-      break;
-    case turnRight:
-      motorMode = rightRight();
-      break;
-    case driveForward:
-      motorMode = zoomZoom();
-      break;
-  }
   if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
     previous_millis = millis();
 
@@ -201,7 +146,7 @@ STATE running() {
     if (!is_battery_voltage_OK()) return STOPPED;
 #endif
 
-// I think this moves the servo motor given? not wheel
+
     turret_motor.write(pos);
 
     if (pos == 0)
@@ -250,7 +195,57 @@ STATE stopped() {
   }
   return STOPPED;
 }
+// edgeFollow Code
+void edgeFollow(){
+  read_front_back_error();
+  control_input_P();
+  align();
+}
+void control_input_P(){
+  correction = P_GAIN * front_back_error;
+}
 
+void read_front_back_error(){
+  float front_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A4))));
+  Serial.print("The front distance value is: ");
+  Serial.println(front_reading);
+  float back_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A5))));
+  Serial.print("The back distance value is: ");
+  Serial.println(back_reading);
+  front_back_error = front_reading - back_reading;
+}
+
+float RearIR() {
+  return analogRead(A4);
+}
+
+float FrontIR() {
+  return analogRead(A5);
+}
+
+float CalcVoltage(float readValue) {
+  return readValue * 5 / 1023;
+}
+
+float CalcInvDist( float Voltage) {
+  return (Coefficents[2] * Voltage * Voltage) + (Coefficents[1] * Voltage) + Coefficents[0];//currently uses a second order polynomial fitting.
+}
+
+float CalcDist ( float InvDist) {
+  return 1 / (InvDist - .42);
+}
+void align(){
+  //positive correction will turn anticlockwise
+  Serial.print("Correction: ");
+  Serial.println(correction);
+  left_font_motor.writeMicroseconds(1500 + speed_val - correction);
+  left_rear_motor.writeMicroseconds(1500 + speed_val - correction);
+  right_rear_motor.writeMicroseconds(1500 - speed_val - correction);
+  right_font_motor.writeMicroseconds(1500 - speed_val - correction); 
+}
+
+
+// end of edge follow code
 void fast_flash_double_LED_builtin()
 {
   static byte indexer = 0;
@@ -406,7 +401,66 @@ void GYRO_reading()
 }
 #endif
 
+//Serial command pasing
+void read_serial_command()
+{
+  if (SerialCom->available()) {
+    char val = SerialCom->read();
+    SerialCom->print("Speed:");
+    SerialCom->print(speed_val);
+    SerialCom->print(" ms ");
 
+    //Perform an action depending on the command
+    switch (val) {
+      case 'w'://Move Forward
+      case 'W':
+        forward ();
+        SerialCom->println("Forward");
+        break;
+      case 's'://Move Backwards
+      case 'S':
+        reverse ();
+        SerialCom->println("Backwards");
+        break;
+      case 'q'://Turn Left
+      case 'Q':
+        strafe_left();
+        SerialCom->println("Strafe Left");
+        break;
+      case 'e'://Turn Right
+      case 'E':
+        strafe_right();
+        SerialCom->println("Strafe Right");
+        break;
+      case 'a'://Turn Right
+      case 'A':
+        ccw();
+        SerialCom->println("ccw");
+        break;
+      case 'd'://Turn Right
+      case 'D':
+        cw();
+        SerialCom->println("cw");
+        break;
+      case '-'://Turn Right
+      case '_':
+        speed_change = -100;
+        SerialCom->println("-100");
+        break;
+      case '=':
+      case '+':
+        speed_change = 100;
+        SerialCom->println("+");
+        break;
+      default:
+        stop();
+        SerialCom->println("stop");
+        break;
+    }
+
+  }
+
+}
 
 //----------------------Motor moments------------------------
 //The Vex Motor Controller 29 use Servo Control signals to determine speed and direction, with 0 degrees meaning neutral https://en.wikipedia.org/wiki/Servo_control
@@ -441,18 +495,65 @@ void stop() //Stop
 
 void forward()
 {
+   edgeFollow();/*
   left_font_motor.writeMicroseconds(1500 + speed_val);
   left_rear_motor.writeMicroseconds(1500 + speed_val);
   right_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_font_motor.writeMicroseconds(1500 - speed_val);
+  right_font_motor.writeMicroseconds(1500 - speed_val);*/
 }
+
+//new stuff for openloop control
+void directionControl (double control_x, double control_y, double w, double *motorPower) {
+     
+  *motorPower = (control_x + control_y + dim*w);
+  *(motorPower+1) = (control_x - control_y + dim*w);
+  *(motorPower+2) = (-control_x + control_y + dim*w);
+  *(motorPower+3) = (-control_x - control_y + dim*w);
+
+   
+   Serial.println("after the math");
+   Serial.println(motorPower[0]);
+    Serial.println(motorPower[1]);
+     Serial.println(motorPower[2]);
+     Serial.println(motorPower[3]);
+}
+//
 
 void reverse ()
 {
+  double motorPower[4] = {0,1,2,3};
+  float x_co = 0.0;
+  float y_co = 0.0;
+  float rotate = 0.0;
+  Serial.println(" ");
+  Serial.println("Enter x component");   
+  while(Serial.available()==0) {} //wait for user input
+  x_co=Serial.parseFloat(); // read input
+      
+  Serial.println("Enter y component");   
+  while(Serial.available()==0) {}
+  y_co=Serial.parseFloat();  
+
+   Serial.println("Enter rotation component");   
+  while(Serial.available()==0) {}
+  rotate=Serial.parseFloat();
+      
+  directionControl(x_co,y_co,rotate, motorPower);  
+  Serial.println("when it comes out");
+  Serial.println(motorPower[0],4);
+  Serial.println(motorPower[1],4);
+  Serial.println(motorPower[2],4);
+  Serial.println(motorPower[3],4 );
+
+  left_font_motor.writeMicroseconds(1500 + motorPower[0]);
+  right_font_motor.writeMicroseconds(1500 + motorPower[1]);
+  left_rear_motor.writeMicroseconds(1500 + motorPower[2]);
+  right_rear_motor.writeMicroseconds(1500 + motorPower[3]);
+  /*
   left_font_motor.writeMicroseconds(1500 - speed_val);
   left_rear_motor.writeMicroseconds(1500 - speed_val);
   right_rear_motor.writeMicroseconds(1500 + speed_val);
-  right_font_motor.writeMicroseconds(1500 + speed_val);
+  right_font_motor.writeMicroseconds(1500 + speed_val);*/
 }
 
 void ccw ()

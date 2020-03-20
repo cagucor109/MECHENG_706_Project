@@ -73,12 +73,13 @@ void setup(void)
   turret_motor.attach(11);
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(A4, INPUT);
+  pinMode(A4, INPUT);
   // The Trigger pin will tell the sensor to range find
   pinMode(TRIG_PIN, OUTPUT);
   digitalWrite(TRIG_PIN, LOW);
 
   // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
-  SerialCom = &Serial1;
+  SerialCom = &Serial;
   Serial.begin(115200);
   SerialCom->println("MECHENG706_Base_Code_25/01/2018");
   delay(1000);
@@ -111,7 +112,7 @@ void read_front_back_error(){
   float front_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A4))));
   Serial.print("The front distance value is: ");
   Serial.println(front_reading);
-  int back_reading = 15;
+  float back_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A5))));
   Serial.print("The back distance value is: ");
   Serial.println(back_reading);
   front_back_error = front_reading - back_reading;

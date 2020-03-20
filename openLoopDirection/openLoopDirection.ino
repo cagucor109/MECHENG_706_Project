@@ -447,10 +447,10 @@ void stop() //Stop
 //new stuff
 void directionControl (double control_x, double control_y, double w, double *motorPower) {
      
-  *motorPower = (control_x - control_y + dim*w);
-  *(motorPower+1) = (control_x + control_y + dim*w);
+  *motorPower = (control_x + control_y + dim*w);
+  *(motorPower+1) = (control_x - control_y + dim*w);
   *(motorPower+2) = (-control_x + control_y + dim*w);
-  *(motorPower+3) = (-control_x - control_y - dim*w);
+  *(motorPower+3) = (-control_x - control_y + dim*w);
 
    
    Serial.println("after the math");
@@ -468,6 +468,7 @@ void forward()
   double motorPower[4] = {0,1,2,3};
   float x_co = 0.0;
   float y_co = 0.0;
+  float rotate = 0.0;
 
   Serial.println("Enter x component");   
   while(Serial.available()==0) {} //wait for user input
@@ -476,8 +477,12 @@ void forward()
   Serial.println("Enter y component");   
   while(Serial.available()==0) {}
   y_co=Serial.parseFloat();  
+
+   Serial.println("Enter rotation component");   
+  while(Serial.available()==0) {}
+  rotate=Serial.parseFloat();
       
-     directionControl(x_co,y_co,0, motorPower);  
+     directionControl(x_co,y_co,rotate, motorPower);  
      Serial.println("when it comes out");
      Serial.println(motorPower[0],4);
      Serial.println(motorPower[1],4);
@@ -485,9 +490,10 @@ void forward()
      Serial.println(motorPower[3],4 );
 
   left_font_motor.writeMicroseconds(1500 + motorPower[0]);
+  right_font_motor.writeMicroseconds(1500 + motorPower[1]);
   left_rear_motor.writeMicroseconds(1500 + motorPower[2]);
   right_rear_motor.writeMicroseconds(1500 + motorPower[3]);
-  right_font_motor.writeMicroseconds(1500 + motorPower[1]);
+
  
 }
 

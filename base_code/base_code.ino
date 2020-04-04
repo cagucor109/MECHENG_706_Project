@@ -23,6 +23,32 @@
 #define wheelRadius 24
 #define dim 1.3889
 #include <Servo.h>  //Need for Servo pulse output
+// includes from sensor code
+#include <math.h>
+
+#define IR_LEFT_FRONT_PIN 59 //A5
+#define IR_LEFT_FRONT_POSITION_CORRECTION 68.65 //This is a correction factor in mm that is added to take distance from center of robot parallel with the left face.
+#define IR_LEFT_FRONT_OFFSET 114  //This is a correction factor in mm that is added to take distance from center of robot parallel with the front face.
+#define IR_LEFT_BACK_PIN  58//A4
+#define IR_LEFT_BACK_POSITION_CORRECTION 68.65 //This is a correction factor in mm that is added to take distance from center of robot parallel with the left face.
+#define IR_LEFT_BACK_OFFSET 128 //This is a correction factor in mm that is added to take distance from center of robot parallel with the front face.
+#define IR_FORWARD_PIN 63 //A9
+#define IR_FORWARD_POSITION_CORRECTION 44.4 //This is a correction factor in mm that is added to take distance from center of robot.
+#define IR_REAR_PIN 62//A8
+#define IR_REAR_POSITION_CORRECTION 52 //This is a correction factor in mm that is added to take distance from center of robot.
+
+
+#define GYRO_PIN 69 //A15
+#define GYRO_CORRECTION 1.1 //correction factor in degrees per second
+#define GYRO_READ_TIME  0.01 //this is for a 10ms loop. Change to suit
+
+#define SONAR_TRIG_PIN 48 //D48
+#define SONAR_ECHO_PIN 49 //D49
+#define SONAR_POSITION_CORRECTION 78.25 //This is a correction factor in mm that is added to take distance from center of robot.
+
+#define P_GAIN_LEFT 10
+#define P_GAIN_FRONT 10
+#define P_GAIN_ALLIGN 10
 
 //#define NO_READ_GYRO  //Uncomment of GYRO is not attached.
 //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
@@ -34,6 +60,36 @@ enum STATE {
   RUNNING,
   STOPPED
 };
+// modes for turning, following wall or setting up
+enum MODE {
+  SETTING_UP,
+  EDGE_FOLLOW,
+  TURNING,
+  FINISHED
+};
+// sensor structures
+struct Position{
+  uint16_t frontDistance;
+  uint16_t rearDistance;
+  uint16_t leftDistance;  
+  float Angle;
+  float Parallel;
+  };
+
+Position robotPosition;
+
+
+struct SensorCalibration{
+  float irLeftFront[3]= {0.0182,0.0371,0.4368}; //this is bullshit. Need to think about the short range IR
+  float irLeftBack[3]= {-0.0002,0.1025,-7.9823};
+  float irForward[3]= {0,0.0232,-0.7972};
+  float irRear[3]= {0,0.0127,0.0566};
+  uint16_t longConstraints[2] ={110,490}; //Need to confirm this in matlab
+  uint16_t shortConstraints[2]={115,630};
+  };
+
+  
+SensorCalibration Coefficents;
 
 //Refer to Shield Pinouts.jpg for pin locations
 
@@ -61,15 +117,24 @@ Servo turret_motor;
 int speed_val = 100;
 int speed_change;
 
+// setup stuff for motor control from open loop
+  double motorPower[4] = {0,1,2,3};
+  float x_co = 0.0;
+  float y_co = 0.0;
+  float rotate = 0.0;
+
+
 //Serial Pointer
 HardwareSerial *SerialCom;
 
 int pos = 0;
 //stuff for edge follow
-#define P_GAIN 10
+
 int front_back_error = 0;
-int correction = 0;
-float Coefficents[3] = {0.4368, 0.0371, 0.0182};
+int correction_angle = 0;
+int correction_left = 0;
+int correction_front = 0;
+//float Coefficents[3] = {0.4368, 0.0371, 0.0182};
 
 
 void setup(void)
@@ -88,6 +153,7 @@ void setup(void)
   delay(1000);
   SerialCom->println("Setup....");
 
+  sensorInit(); // setup sensors
   delay(1000); //settling time but no really needed
 
 }
@@ -95,6 +161,7 @@ void setup(void)
 void loop(void) //main loop
 {
   static STATE machine_state = INITIALISING;
+
   //Finite-state machine Code
   switch (machine_state) {
     case INITIALISING:
@@ -121,11 +188,70 @@ STATE initialising() {
 }
 
 STATE running() {
-
+  static MODE runMode = SETTING_UP;
   static unsigned long previous_millis;
-
+  static int count_turns = 0;
+  static int parallel = 0;
+  static int left = 0;
+  static int reached_wall = 0;
   read_serial_command();
   fast_flash_double_LED_builtin();
+
+  switch(runMode){
+    case SETTING_UP:
+      updateLeftDistance();
+      left = checkLeftDist();
+      UpdateParallel();
+      parallel = checkParallel();
+      powerMotors();
+      if ((parallel == 1) && (left == 1)){ // if the robot is parallel and at the correct distance(ie oriented properly at starting position)
+        runMode = EDGE_FOLLOW;
+      }
+      break;
+    case EDGE_FOLLOW:
+      
+      reached_wall = checkFrontDist(); 
+      parallel = checkParallel();
+      left = checkLeftDist();
+      powerMotors();
+      if (reached_wall){
+        count_turns++;
+        if (count_turns < 4){
+          runMode = FINISHED;
+        }else {
+          runMode = TURNING;
+        }     
+      }
+      break;
+    case TURNING:   // turns with a flat rate based on gyro reading until about 75 deg then enters setup mode.
+      ResetAngle();
+      UpdateAngle(GYRO_PIN);
+      if (robotPosition.Angle < 75){ // Need to decide threshold and priority of GYRO vs left dist and IR.
+        rotate = 90;
+        powerMotors();
+      } else if (robotPosition.Angle > 90){
+        rotate = -45;
+        powerMotors();
+      } else {
+         runMode = SETTING_UP;
+      }
+      
+      break;
+    case FINISHED:
+      x_co = 0;
+      y_co = 0;
+      rotate = 0;
+      powerMotors();
+      break;
+  }
+
+
+
+
+
+  // update distances from sensor
+  UpdateDistances(); // only front and back
+  Serial.println(robotPosition.frontDistance);
 
   if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
     previous_millis = millis();
@@ -196,20 +322,22 @@ STATE stopped() {
   return STOPPED;
 }
 // edgeFollow Code
-void edgeFollow(){
-  read_front_back_error();
-  control_input_P();
-  align();
-}
-void control_input_P(){
-  correction = P_GAIN * front_back_error;
+int edgeFollow(){// might not need this function anymore its been moved into the state machine in running
+  int reached_wall = 0;
+  //read_front_back_error();
+  reached_wall = checkFrontDist(); 
+  checkParallel();
+  checkLeftDist();
+  powerMotors();
+  return reached_wall;
 }
 
-void read_front_back_error(){
-  float front_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A4))));
+
+/*void read_front_back_error(){        stuff from edge follow we dont need anymore with sensor codes?
+  float front_reading = robotPosition.frontDistance;
   Serial.print("The front distance value is: ");
   Serial.println(front_reading);
-  float back_reading = CalcDist(CalcInvDist(CalcVoltage(analogRead(A5))));
+  float back_reading = robotPosition.rearDistance;
   Serial.print("The back distance value is: ");
   Serial.println(back_reading);
   front_back_error = front_reading - back_reading;
@@ -233,15 +361,62 @@ float CalcInvDist( float Voltage) {
 
 float CalcDist ( float InvDist) {
   return 1 / (InvDist - .42);
+}*/
+
+int checkFrontDist (){ // this function checks front distance and adjusts control input 
+  correction_front = P_GAIN_FRONT*robotPosition.frontDistance;
+  if (robotPosition.frontDistance <  400){
+    y_co = correction_front;
+    if (robotPosition.frontDistance <180){ // could be tuned depending on update rate of sensors.
+      return 1;
+    }
+    return 0;
+  }else {
+    y_co = 300; // base speed NEED TO TUNE THIS TO TIMING CONSTRAINTS
+    return 0;
+  }
 }
-void align(){
-  //positive correction will turn anticlockwise
+int checkParallel(){ // this function finds the amount of rotation w the robot needs to do.
+  /*positive correction will turn anticlockwise
   Serial.print("Correction: ");
   Serial.println(correction);
   left_font_motor.writeMicroseconds(1500 + speed_val - correction);
   left_rear_motor.writeMicroseconds(1500 + speed_val - correction);
   right_rear_motor.writeMicroseconds(1500 - speed_val - correction);
-  right_font_motor.writeMicroseconds(1500 - speed_val - correction); 
+  right_font_motor.writeMicroseconds(1500 - speed_val - correction); */
+
+  // if its parallel do nothing or if the magnitude is greater than 0 adjust the rotation
+  correction_angle = P_GAIN_ALLIGN * robotPosition.Parallel;
+  if (robotPosition.Parallel == 0){
+    rotate = 0;
+    return 1;
+  }else if (abs(robotPosition.Parallel) > 0){
+    rotate = correction_angle;
+    return 0;
+  }
+  return 0;
+}
+
+int checkLeftDist(){
+  // there is a negative one at the start due to the flipping of coordinate systems with openloop control.
+  float left_error = (150 - robotPosition.leftDistance);
+  correction_front = (-1)*P_GAIN_LEFT*left_error;
+  if (robotPosition.leftDistance ==  150){
+    x_co = 0;
+    return 1;
+  }else {
+    x_co = correction_front;
+    return 0;
+  }
+}
+
+void powerMotors(){ // this function sends power to motors all at once
+  directionControl(x_co,y_co,rotate, motorPower);  
+
+  left_font_motor.writeMicroseconds(1500 + motorPower[0]);
+  right_font_motor.writeMicroseconds(1500 + motorPower[1]);
+  left_rear_motor.writeMicroseconds(1500 + motorPower[2]);
+  right_rear_motor.writeMicroseconds(1500 + motorPower[3]);
 }
 
 

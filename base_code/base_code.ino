@@ -199,10 +199,14 @@ STATE running() {
 
   switch(runMode){
     case SETTING_UP:
+       // update sensors
       updateLeftDistance();
-      left = checkLeftDist();
       UpdateParallel();
+      // update boolean 
+      left = checkLeftDist();
       parallel = checkParallel();
+      xco = -100;
+      rotate = -90;
       powerMotors();
       if ((parallel == 1) && (left == 1)){ // if the robot is parallel and at the correct distance(ie oriented properly at starting position)
         runMode = EDGE_FOLLOW;
@@ -226,10 +230,10 @@ STATE running() {
     case TURNING:   // turns with a flat rate based on gyro reading until about 75 deg then enters setup mode.
       ResetAngle();
       UpdateAngle(GYRO_PIN);
-      if (robotPosition.Angle < 75){ // Need to decide threshold and priority of GYRO vs left dist and IR.
+      if (robotPosition.Angle < 85){ // Need to decide threshold and priority of GYRO vs left dist and IR.
         rotate = 90;
         powerMotors();
-      } else if (robotPosition.Angle > 90){
+      } else if (robotPosition.Angle > 95){
         rotate = -45;
         powerMotors();
       } else {

@@ -26,6 +26,11 @@
 // includes from sensor code
 #include <math.h>
 
+// include libraries
+#include <C:\Users\munih\Documents\GitHub\MECHENG_706_Project\MainCode\libraries\Controllers\Controllers.h>
+#include <C:\Users\munih\Documents\GitHub\MECHENG_706_Project\MainCode\libraries\Controllers\Controllers.cpp>
+#include <C:\Users\munih\Documents\GitHub\MECHENG_706_Project\MainCode\libraries\Sensors\Sensors.h>
+#include <C:\Users\munih\Documents\GitHub\MECHENG_706_Project\MainCode\libraries\Sensors\Sensors.cpp>
 #define IR_LEFT_FRONT_PIN 59 //A5
 #define IR_LEFT_FRONT_POSITION_CORRECTION 68.65 //This is a correction factor in mm that is added to take distance from center of robot parallel with the left face.
 #define IR_LEFT_FRONT_OFFSET 114  //This is a correction factor in mm that is added to take distance from center of robot parallel with the front face.
@@ -76,7 +81,7 @@ struct Position{
   float Parallel;
   };
 
-Position robotPosition;
+Position sensor;
 
 
 struct SensorCalibration{
@@ -119,9 +124,9 @@ int speed_change;
 
 // setup stuff for motor control from open loop
   double motorPower[4] = {0,1,2,3};
-  float x_co = 0.0;
-  float y_co = 0.0;
-  float rotate = 0.0;
+  float x_controlEffort = 0.0;
+  float y_controlEffort = 0.0;
+  float rotateControl = 0.0;
 
 
 //Serial Pointer
@@ -153,7 +158,7 @@ void setup(void)
   delay(1000);
   SerialCom->println("Setup....");
 
-  sensorInit(); // setup sensors
+
   delay(1000); //settling time but no really needed
 
 }
@@ -189,73 +194,147 @@ STATE initialising() {
 
 STATE running() {
   static MODE runMode = SETTING_UP;
+  static MODE nextMode = EDGE_FOLLOW;
+  static Controllers controlSystem;  // declaring a control system object?
+  static Sensors sensor;
+  
   static unsigned long previous_millis;
   static int count_turns = 0;
   static int parallel = 0;
   static int left = 0;
+  static int restartCtrl = 0;
   static int reached_wall = 0;
   read_serial_command();
   fast_flash_double_LED_builtin();
 
-  switch(runMode){
+  //UPDATE SENSORS/INPUTS
+  sensor.updateLeftDistance();
+  sensor.updateParallel();
+  sensor.updateFrontDistance();
+  sensor.updateAngle();
+
+  // NEXT STATE 
+  switch(runMode){ 
     case SETTING_UP:
-       // update sensors
-      updateLeftDistance();
-      UpdateParallel();
-      // update boolean 
-      left = checkLeftDist();
-      parallel = checkParallel();
-      xco = -100;
-      rotate = -90;
-      powerMotors();
-      if ((parallel == 1) && (left == 1)){ // if the robot is parallel and at the correct distance(ie oriented properly at starting position)
-        runMode = EDGE_FOLLOW;
+      if (sensor.getFrontDistance() < 150){
+        nextMode = TURNING;
+      }else if ((sensor.getLeftDistance() == 150) && (sensor.getParallel() == 0)){
+        nextMode = EDGE_FOLLOW;
+      }else { 
+        nextMode = SETTING_UP;
       }
       break;
     case EDGE_FOLLOW:
-      
-      reached_wall = checkFrontDist(); 
-      parallel = checkParallel();
-      left = checkLeftDist();
-      powerMotors();
-      if (reached_wall){
-        count_turns++;
-        if (count_turns < 4){
-          runMode = FINISHED;
+        if ((count_turns < 4) && (sensor.getFrontDistance() < 150)){  // wall is too close muse turn
+          nextMode = TURNING;
+        }else if ((count_turns < 4) && (sensor.getFrontDistance() > 150)){  //  wall is not close enough
+          nextMode = EDGE_FOLLOW;
         }else {
-          runMode = TURNING;
-        }     
-      }
+          nextMode = FINISHED;
+        }
       break;
     case TURNING:   // turns with a flat rate based on gyro reading until about 75 deg then enters setup mode.
-      ResetAngle();
-      UpdateAngle(GYRO_PIN);
-      if (robotPosition.Angle < 85){ // Need to decide threshold and priority of GYRO vs left dist and IR.
-        rotate = 90;
-        powerMotors();
-      } else if (robotPosition.Angle > 95){
-        rotate = -45;
-        powerMotors();
-      } else {
-         runMode = SETTING_UP;
+      if ((sensor.getGyroState() == 0) && (sensor.getLeftDistance() == 150) && (sensor.getParallel() == 0)){ // can change this so that it loops back into settin up mode before going back into edge follow for safety.
+        nextMode = EDGE_FOLLOW; 
+      }else {
+        nextMode = TURNING;
       }
-      
       break;
     case FINISHED:
-      x_co = 0;
-      y_co = 0;
-      rotate = 0;
-      powerMotors();
+      if (restartCtrl == 1){
+        nextMode = SETTING_UP;
+      }else{
+        nextMode = FINISHED;
+      }
+        
       break;
   }
-
-
-
-
-
-  // update distances from sensor
-  UpdateDistances(); // only front and back
-  Serial.println(robotPosition.frontDistance);
+  rotateControl = 0;
+  x_controlEffort = 0;
+  y_controlEffort = 0;
+  // STATE OUTPUTS
+  switch(runMode){ 
+    case SETTING_UP:
+      if (nextMode == SETTING_UP){
+        rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", sensor.getParallel()));
+        x_controlEffort = controlSystem.controlP( "left",controlSystem.calculateError("left", sensor.getLeftDistance()));
+      }else{
+        // stop motor control to not overshoot
+        rotateControl = 0;
+        x_controlEffort = 0;
+        y_controlEffort = 0;
+        if (nextMode == TURNING){
+          sensor.enableGyro(); // if turning start the gyro
+          controlSystem.setDesiredAngle(90); // set turn target to 90 degrees
+        }else { // edge follow mode 
+          sensor.disableGyro();
+          controlSystem.setDesiredAngle(0); // set turn target to 0 degrees
+        }
+      }
+        
+      /* update boolean 
+      left = checkLeftDist();
+      parallel = checkParallel();
+      controlSystem.getxco = -100;
+      rotateControl = -90;
+      if ((parallel == 1) && (left == 1)){ // if the robot is parallel and at the correct distance(ie oriented properly at starting position)
+        runMode = EDGE_FOLLOW;
+      }*/
+      break;
+    case EDGE_FOLLOW:
+      if (nextMode == EDGE_FOLLOW){
+        if (sensor.getFrontDistance() > 150){
+          y_controlEffort = controlSystem.controlP( "front",controlSystem.calculateError("front", sensor.getFrontDistance()));
+        }
+        if (sensor.getLeftDistance() != 150){
+          x_controlEffort = controlSystem.controlP( "left",controlSystem.calculateError("left", sensor.getLeftDistance()));
+        }
+        if (sensor.getAngle() != 0){
+          rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", sensor.getParallel()));
+        }
+      }else {
+        //stop to turn or finish
+        rotateControl = 0;
+        x_controlEffort = 0;
+        y_controlEffort = 0;
+        if (nextMode == TURNING){ // if turning start the gyro
+          sensor.enableGyro();
+          controlSystem.setDesiredAngle(90); // set turn target to 90 degrees
+        }else { // move into finished mode
+          sensor.disableGyro();
+          controlSystem.setDesiredAngle(0);
+        }
+      }
+      break;
+    case TURNING:  
+      if (nextMode == TURNING){
+        rotateControl = controlSystem.controlP( "angle",controlSystem.calculateError("angle", sensor.getAngle())); // directs rotation control to target previously set at 90 degrees.
+      } else if (nextMode == EDGE_FOLLOW){
+        // turn off motor controls
+        rotateControl = 0;
+        x_controlEffort = 0;
+        y_controlEffort = 0;
+        // disable gyro and reset angle to 0
+        sensor.disableGyro();
+        controlSystem.setDesiredAngle(0);
+      }else {
+        
+      }
+      break;
+    case FINISHED:
+      // stop motor controls
+      x_controlEffort = 0;
+      y_controlEffort = 0;
+      rotateControl = 0;
+      // ask user if they want to complete another lap
+      Serial.println(" ");
+      Serial.println("Another Lap?");   
+      while(Serial.available()==0) {} //wait for user input
+      restartCtrl=Serial.parseInt(); // read input
+      
+      break;
+  }
+  powerMotors(); // compiles the control efforts and sends power to motor drivers.
 
   if (millis() - previous_millis > 500) {  //Arduino style 500ms timed execution statement
     previous_millis = millis();
@@ -325,23 +404,13 @@ STATE stopped() {
   }
   return STOPPED;
 }
-// edgeFollow Code
-int edgeFollow(){// might not need this function anymore its been moved into the state machine in running
-  int reached_wall = 0;
-  //read_front_back_error();
-  reached_wall = checkFrontDist(); 
-  checkParallel();
-  checkLeftDist();
-  powerMotors();
-  return reached_wall;
-}
 
 
 /*void read_front_back_error(){        stuff from edge follow we dont need anymore with sensor codes?
-  float front_reading = robotPosition.frontDistance;
+  float front_reading = sensor.frontDistance;
   Serial.print("The front distance value is: ");
   Serial.println(front_reading);
-  float back_reading = robotPosition.rearDistance;
+  float back_reading = sensor.rearDistance;
   Serial.print("The back distance value is: ");
   Serial.println(back_reading);
   front_back_error = front_reading - back_reading;
@@ -365,18 +434,19 @@ float CalcInvDist( float Voltage) {
 
 float CalcDist ( float InvDist) {
   return 1 / (InvDist - .42);
-}*/
+}
 
 int checkFrontDist (){ // this function checks front distance and adjusts control input 
-  correction_front = P_GAIN_FRONT*robotPosition.frontDistance;
-  if (robotPosition.frontDistance <  400){
-    y_co = correction_front;
-    if (robotPosition.frontDistance <180){ // could be tuned depending on update rate of sensors.
+  
+  y_controlEffort = controlSystem.controlP( "front",controlSystem.calculateError("front", sensor.frontDistance));
+  if (sensor.frontDistance <  400){
+    y_controlEffort = correction_front;
+    if (sensor.frontDistance <180){ // could be tuned depending on update rate of sensors.
       return 1;
     }
     return 0;
   }else {
-    y_co = 300; // base speed NEED TO TUNE THIS TO TIMING CONSTRAINTS
+    y_controlEffort = 300; // base speed NEED TO TUNE THIS TO TIMING CONSTRAINTS
     return 0;
   }
 }
@@ -387,15 +457,15 @@ int checkParallel(){ // this function finds the amount of rotation w the robot n
   left_font_motor.writeMicroseconds(1500 + speed_val - correction);
   left_rear_motor.writeMicroseconds(1500 + speed_val - correction);
   right_rear_motor.writeMicroseconds(1500 - speed_val - correction);
-  right_font_motor.writeMicroseconds(1500 - speed_val - correction); */
+  right_font_motor.writeMicroseconds(1500 - speed_val - correction); 
 
   // if its parallel do nothing or if the magnitude is greater than 0 adjust the rotation
-  correction_angle = P_GAIN_ALLIGN * robotPosition.Parallel;
-  if (robotPosition.Parallel == 0){
-    rotate = 0;
+  correction_angle = P_GAIN_ALLIGN * sensor.Parallel;
+  if (sensor.Parallel == 0){
+    rotateControl = 0;
     return 1;
-  }else if (abs(robotPosition.Parallel) > 0){
-    rotate = correction_angle;
+  }else if (abs(sensor.Parallel) > 0){
+    rotateControl = correction_angle;
     return 0;
   }
   return 0;
@@ -403,19 +473,19 @@ int checkParallel(){ // this function finds the amount of rotation w the robot n
 
 int checkLeftDist(){
   // there is a negative one at the start due to the flipping of coordinate systems with openloop control.
-  float left_error = (150 - robotPosition.leftDistance);
+  float left_error = (150 - sensor.leftDistance);
   correction_front = (-1)*P_GAIN_LEFT*left_error;
-  if (robotPosition.leftDistance ==  150){
-    x_co = 0;
+  if (sensor.leftDistance ==  150){
+    x_controlEffort = 0;
     return 1;
   }else {
-    x_co = correction_front;
+    x_controlEffort = correction_front;
     return 0;
   }
-}
+}*/
 
 void powerMotors(){ // this function sends power to motors all at once
-  directionControl(x_co,y_co,rotate, motorPower);  
+  directionControl(x_controlEffort,y_controlEffort,rotateControl, motorPower);  
 
   left_font_motor.writeMicroseconds(1500 + motorPower[0]);
   right_font_motor.writeMicroseconds(1500 + motorPower[1]);
@@ -674,11 +744,10 @@ void stop() //Stop
 
 void forward()
 {
-   edgeFollow();/*
   left_font_motor.writeMicroseconds(1500 + speed_val);
   left_rear_motor.writeMicroseconds(1500 + speed_val);
   right_rear_motor.writeMicroseconds(1500 - speed_val);
-  right_font_motor.writeMicroseconds(1500 - speed_val);*/
+  right_font_motor.writeMicroseconds(1500 - speed_val);
 }
 
 //new stuff for openloop control
@@ -701,23 +770,23 @@ void directionControl (double control_x, double control_y, double w, double *mot
 void reverse ()
 {
   double motorPower[4] = {0,1,2,3};
-  float x_co = 0.0;
-  float y_co = 0.0;
-  float rotate = 0.0;
+  float x_controlEffort = 0.0;
+  float y_controlEffort = 0.0;
+  float rotateControl = 0.0;
   Serial.println(" ");
   Serial.println("Enter x component");   
   while(Serial.available()==0) {} //wait for user input
-  x_co=Serial.parseFloat(); // read input
+  x_controlEffort=Serial.parseFloat(); // read input
       
   Serial.println("Enter y component");   
   while(Serial.available()==0) {}
-  y_co=Serial.parseFloat();  
+  y_controlEffort=Serial.parseFloat();  
 
    Serial.println("Enter rotation component");   
   while(Serial.available()==0) {}
-  rotate=Serial.parseFloat();
+  rotateControl=Serial.parseFloat();
       
-  directionControl(x_co,y_co,rotate, motorPower);  
+  directionControl(x_controlEffort,y_controlEffort,rotateControl, motorPower);  
   Serial.println("when it comes out");
   Serial.println(motorPower[0],4);
   Serial.println(motorPower[1],4);

@@ -3,12 +3,7 @@
 // constructors
 Sensors::Sensors(){
 //Need to set some variables that the user should have access to.
-  this->irLeftFront[]= {0.0182,0.0371,0.4368}; //this is bullshit. Need to think about the short range IR
-  this->irLeftBack[]= {-0.0002,0.1025,-7.9823};
-  this->irForward[]= {0,0.0232,-0.7972};
-  this->irRear[]= {0,0.0127,0.0566};
-  this->longConstraints[] ={110,490}; //Need to confirm this in matlab
-  this->shortConstraints[]={115,630};
+
 }
 
 

@@ -59,12 +59,12 @@ private:  //These are the variables
   bool gyroState;
   
   //These are not accessed by external code. //Move the assigning of values to the constructor.
-  const float irLeftFront[3]= {0.0182,0.0371,0.4368};; //this is bullshit. Need to think about the short range IR
-  const float irLeftBack[3]= {-0.0002,0.1025,-7.9823};
-  const float irForward[3]= {0,0.0232,-0.7972};
-  const float irRear[3]= {0,0.0127,0.0566};
-  const uint16_t longConstraints[2] ={110,490}; //Need to confirm this in matlab
-  const uint16_t shortConstraints[2]={115,630};
+    float irLeftFront[3]; //this is bullshit. Need to think about the short range IR
+  float irLeftBack[3];
+  float irForward[3];
+  float irRear[3];
+  uint16_t longConstraints[2]; //Need to confirm this in matlab
+  uint16_t shortConstraints[2];
 
 };
 

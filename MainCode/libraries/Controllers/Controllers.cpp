@@ -37,7 +37,7 @@ double Controllers::getDesiredAngle(){
 // error positive if rotated clockwise
 double Controllers::calculateError(char *field, double reading){
     if(field == "front"){
-        return desiredDistFront_ - reading;
+        return reading - desiredDistFront_ ;
     }else if (field == "right"){
         return desiredDistRight_ - reading;
     }else if(field == "angle"){

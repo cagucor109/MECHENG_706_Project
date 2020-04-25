@@ -11,7 +11,7 @@ class Motors {
     //Constructor
     Motors();
     //getters
-
+	bool isEnabled();
     //setters
     
     //utilities
@@ -20,7 +20,7 @@ class Motors {
     void powerMotors();
     void calcMotorPower(double control_x, double control_y, double w);
     void motorsDebug();
-
+	 
 
 	//Reconfigure these to be private with getters and setters or make external variables that are passed via methods.
 	float x_controlEffort;
@@ -34,7 +34,8 @@ class Motors {
     const byte left_rear = 47;
     const byte right_rear = 50;
     const byte right_front = 51;
-
+	
+	bool motorsEnabled;
     Servo *left_front_motor;
     Servo *left_rear_motor;
     Servo *right_rear_motor;

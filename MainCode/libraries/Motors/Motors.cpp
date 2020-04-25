@@ -5,8 +5,12 @@ Motors::Motors() {
   this->left_rear_motor= new Servo();
   this->right_rear_motor= new Servo();
   this->right_front_motor= new Servo();
+	this->motorsEnabled = false;
 
+}
 
+bool Motors::isEnabled(){
+	return motorsEnabled;
 }
 
 void Motors::disable_motors()
@@ -15,7 +19,7 @@ void Motors::disable_motors()
   left_rear_motor->detach();  // detach the servo on pin left_rear to turn Vex Motor Controller 29 Off
   right_rear_motor->detach();  // detach the servo on pin right_rear to turn Vex Motor Controller 29 Off
   right_front_motor->detach();  // detach the servo on pin right_front to turn Vex Motor Controller 29 Off
-
+	motorsEnabled = false;
   pinMode(left_front, INPUT);
   pinMode(left_rear, INPUT);
   pinMode(right_rear, INPUT);
@@ -24,6 +28,7 @@ void Motors::disable_motors()
 
 void Motors::enable_motors()
 {
+		motorsEnabled = true;
   left_front_motor->attach(left_front);  // attaches the servo on pin left_front to turn Vex Motor Controller 29 On
   left_rear_motor->attach(left_rear);  // attaches the servo on pin left_rear to turn Vex Motor Controller 29 On
   right_rear_motor->attach(right_rear);  // attaches the servo on pin right_rear to turn Vex Motor Controller 29 On

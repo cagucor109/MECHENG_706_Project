@@ -50,6 +50,9 @@ void Sensors::enableGyro(){
 void Sensors::disableGyro(){
 	this->gyroState=false;
 }
+bool Sensors::getParallelError(){
+	return false;
+}
 
 void Sensors::updateAngle(){
 	if(gyroState){//Now the gyro will only update if enabled and the checking for enabled is handled internally within the sensors class.

@@ -13,7 +13,7 @@
 #define IR_REAR_PIN 62//A8
 #define IR_REAR_POSITION_CORRECTION 52 //This is a correction factor in mm that is added to take distance from center of robot.
 
-
+#define UPDATEGYROTIME 10
 #define GYRO_PIN 69 //A15
 #define GYRO_CORRECTION 1.1 //correction factor in degrees per second
 #define GYRO_READ_TIME  0.01 //this is for a 10ms loop. Change to suit
@@ -37,6 +37,7 @@ public: //These are the methods
 	float getAngle();
 	float getParallel();
 	bool getGyroState();
+	bool getParallelError();
 
     // utilities
 uint16_t readIr(byte readPin, float Coefficents[],uint16_t Constraints[]);
@@ -56,6 +57,7 @@ private:  //These are the variables
   uint16_t leftDistance;  
   float Angle;
   float Parallel;
+  
   bool gyroState;
   
   //These are not accessed by external code. //Move the assigning of values to the constructor.

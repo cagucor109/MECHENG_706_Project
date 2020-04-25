@@ -1,6 +1,6 @@
-//Add some comments and or descriptions at the top... ... ...
+//Mecheng 706 project 1 group 21
 
-//----------------------Libraries-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
 // include libraries
 #include "libraries\Controllers\Controllers.h"
 #include "libraries\Controllers\Controllers.cpp"
@@ -9,20 +9,23 @@
 #include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
 
+
+//Initializing global objects
 Controllers controlSystem;
 Sensors sensor;
 Motors motor;
 
-//----------------------Battery check and Serial Comms-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
 HardwareSerial *SerialCom;
 
-//---------------
+//----------------------Tolerances for state exit conditions---------------------------------------------------------------------------------------------------------------
 #define ANGLETOLERANCE 5
 #define LEFTTOLERANCE 10
 #define FRONTTOLERANCE 150
 #define UPDATETIME 100
-//----------------------State machines-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//----------------------State machines-------------------------------------------------------------------------------------------------------------------------------------
 enum STATE {
   INITIALISING,
   ALIGN,
@@ -32,9 +35,7 @@ enum STATE {
   FINISHED
 };
 
-
-
-//----------------------Setup and main loop-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------Setup and main loop--------------------------------------------------------------------------------------------------------------------------------
 
 void setup(void)
 {
@@ -49,27 +50,34 @@ void setup(void)
 }
 
 
-
 void loop(void)
 {
   static STATE machine_state = INITIALISING;
-  if (!is_battery_voltage_OK()) machine_state = STOPPED;
   static unsigned int turnCounter = 0;
   static unsigned long updateAngleMillis;
   static unsigned long updateFSMMillis;
-  if (millis() - updateAngleMillis > UPDATEGYROTIME) {
+
+  //Updating gryo at 10 ms interval
+  if (millis() - updateAngleMillis > UPDATEGYROTIME) { //UPDATEGRYOTIME is defined in the sensors class
     sensor.updateAngle();
     updateAngleMillis = millis();
   }
+
+  //Running FSM
   if (millis() - updateFSMMillis > UPDATETIME) {
-    //UPDATE SENSORS/INPUTS
+    updateFSMMillis = millis();
+    //Reading sensors
     sensor.updateLeftDistance();
     sensor.updateParallel();
     sensor.updateFrontDistance();
+
+    //Checking battery state
+    if (!is_battery_voltage_OK()) machine_state = STOPPED;
+
     //Next state Finite-state machine Code
     switch (machine_state) {
       case INITIALISING:
-        if (isntit)
+        if (isInit)
           machine_state = ALIGN;
         else
           machine_state = INITIALISING;
@@ -99,7 +107,8 @@ void loop(void)
         if (reset) machine_state = ALIGN;
         break;
     };
-  
+
+
     //Output State Machine
     switch (machine_state) {
       case INITIALISING:
@@ -121,36 +130,33 @@ void loop(void)
         finished();
         break;
     };
-    updateFSMMillis = millis();
   }
 }
-//----------------------Next State Functions-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-bool isntit(){
+
+//----------------------Next State Functions-------------------------------------------------------------------------------------------------------------------------------
+bool isInit() {
   // check for initialisation errors
   if (motor.isEnabled() == true) return 1;
   else return 0;
 }
 
-bool aligned(){
-//Should add some tolerance to this Otherwise it will never exit. any error will be accounted for in edge_follow anyway.
-  if ((abs(150 - sensor.getLeftDistance()) <= LEFTTOLERANCE) && (abs(sensor.getParallel()) <= ANGLETOLERANCE)) { 
-     return 1;
-  }else{
-     return 0;
-  } 
+bool aligned() {
+  if ((abs(150 - sensor.getLeftDistance()) <= LEFTTOLERANCE) && (abs(sensor.getParallel()) <= ANGLETOLERANCE)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
-bool reset(){
-  // can change this so that it loops back into settin up mode before going back into edge follow for safety.
-  if (userInput)     return 1;
-  
+bool reset() {
+  if (userInput()) return 1;
   else return 0;
 }
-bool front(){
+bool front() {
   if (sensor.getFrontDistance() <= FRONTTOLERANCE)  return 1;
-  else  return 0;    
+  else  return 0;
 }
 
-//-----------------------State Output Functions------------------------------------------------------------------------------------
+//-----------------------State Output Functions----------------------------------------------------------------------------------------------------------------------------
 
 void initialising() {
   SerialCom->println("Enabling Motors");
@@ -162,20 +168,20 @@ void align() {
   sensor.disableGyro();
   if (controlSystem.getDesiredAngle() != 0) controlSystem.setDesiredAngle(0);
   if (!sensor.getParallelError()) motor.rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", sensor.getParallel()));
-  if (abs(sensor.getParallel()) < ANGLETOLERANCE){
+  if (abs(sensor.getParallel()) < ANGLETOLERANCE) { //By setting this value to the define ANGLETOLERANCE the robot will be parallel before changing left distance. Increase to greater than the defined tolerance to make both actions at the same time
     motor.x_controlEffort = controlSystem.controlP( "left", controlSystem.calculateError("left", sensor.getLeftDistance()));
   }
-  motor.powerMotors();
+  motor.powerMotors();// compiles the control efforts and sends power to motor drivers.
 }
 void turn() {
   if (sensor.getGyroState() == 0) sensor.enableGyro();
   if (controlSystem.getDesiredAngle() != 90)  controlSystem.setDesiredAngle(90);// directs rotation control to target previously set at 90 degrees.
-  motor.rotateControl = controlSystem.controlP( "angle", controlSystem.calculateError("angle", sensor.getAngle())); 
+  motor.rotateControl = controlSystem.controlP( "angle", controlSystem.calculateError("angle", sensor.getAngle()));
   motor.powerMotors(); // compiles the control efforts and sends power to motor drivers.
 }
 
 void follow() {
-  align(); 
+  align(); //Align handles left distance and parallel with the wall
   motor.y_controlEffort = controlSystem.controlP( "front", controlSystem.calculateError("front", sensor.getFrontDistance()));
   motor.powerMotors(); // compiles the control efforts and sends power to motor drivers.
 }
@@ -184,44 +190,24 @@ void finished() {
   motor.x_controlEffort = 0;
   motor.y_controlEffort = 0;
   motor.rotateControl = 0;
-  motor.powerMotors(); 
-}
-
-bool checkBattery(){
-  static byte counter_lipo_voltage_ok;
-  static unsigned long previous_millis;
-  if (millis() - previous_millis > 500) { //print massage every 500ms
-    previous_millis = millis();
-    SerialCom->println("STOPPED---------");
-  //500ms timed if statement to check lipo and output speed settings
-   if (is_battery_voltage_OK()) {
-      SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
-      SerialCom->println(counter_lipo_voltage_ok);
-      counter_lipo_voltage_ok++;
-      if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
-        counter_lipo_voltage_ok = 0;
-        motor.enable_motors();
-        SerialCom->println("Lipo OK returning to RUN STATE");
-        return;
-      }
-    } else
-    {
-      counter_lipo_voltage_ok = 0;
-    }
-  }
+  motor.powerMotors();
 }
 
 
 void stopped() {
-  //Stop of Lipo Battery voltage is too low, to protect Battery
+  //Stop if Lipo Battery voltage is too low, to protect Battery
   static byte counter_lipo_voltage_ok;
   static unsigned long previous_millis;
   int Lipo_level_cal;
-  if(motor.isEnabled())motor.disable_motors();
+  if (motor.isEnabled())motor.disable_motors();
   slow_flash_LED_builtin();
 }
 
-bool userInput(){
+
+
+//----------------------Battery check and IO-------------------------------------------------------------------------------------------------------------------------------
+
+bool userInput() {
   Serial.println(" ");
   Serial.println("Another Lap? Y/N");
   char restartCtrl;
@@ -231,7 +217,6 @@ bool userInput(){
   else return 0;
 }
 
-//----------------------Status and battery Check---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void fast_flash_double_LED_builtin()
 {
   static byte indexer = 0;
@@ -258,7 +243,30 @@ void slow_flash_LED_builtin()
   }
 }
 
-
+bool checkBattery() {
+  static byte counter_lipo_voltage_ok;
+  static unsigned long previous_millis;
+  if (millis() - previous_millis > 500) { //print massage every 500ms
+    previous_millis = millis();
+    SerialCom->println("STOPPED---------");
+    //500ms timed if statement to check lipo and output speed settings
+    if (is_battery_voltage_OK()) {
+      SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
+      SerialCom->println(counter_lipo_voltage_ok);
+      counter_lipo_voltage_ok++;
+      if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
+        counter_lipo_voltage_ok = 0;
+        motor.enable_motors();
+        SerialCom->println("Lipo OK returning to RUN STATE");
+        return 1;
+      }
+    } else
+    {
+      counter_lipo_voltage_ok = 0;
+      return 0;
+    }
+  }
+}
 
 bool is_battery_voltage_OK()
 {
@@ -303,5 +311,4 @@ bool is_battery_voltage_OK()
     else
       return true;
   }
-
 }

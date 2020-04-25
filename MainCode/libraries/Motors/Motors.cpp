@@ -5,8 +5,7 @@ Motors::Motors() {
   this->left_rear_motor= new Servo();
   this->right_rear_motor= new Servo();
   this->right_front_motor= new Servo();
-	this->motorsEnabled = false;
-
+  this->motorsEnabled = false;
 }
 
 bool Motors::isEnabled(){
@@ -15,45 +14,59 @@ bool Motors::isEnabled(){
 
 void Motors::disable_motors()
 {
-  left_front_motor->detach();  // detach the servo on pin left_front to turn Vex Motor Controller 29 Off
-  left_rear_motor->detach();  // detach the servo on pin left_rear to turn Vex Motor Controller 29 Off
-  right_rear_motor->detach();  // detach the servo on pin right_rear to turn Vex Motor Controller 29 Off
-  right_front_motor->detach();  // detach the servo on pin right_front to turn Vex Motor Controller 29 Off
-	motorsEnabled = false;
-  pinMode(left_front, INPUT);
-  pinMode(left_rear, INPUT);
-  pinMode(right_rear, INPUT);
-  pinMode(right_front, INPUT);
+  left_front_motor->detach();  
+  left_rear_motor->detach(); 
+  right_rear_motor->detach(); 
+  right_front_motor->detach();
+
+  pinMode(LEFT_FRONT, INPUT);
+  pinMode(LEFT_REAR, INPUT);
+  pinMode(RIGHT_REAR, INPUT);
+  pinMode(RIGHT_FRONT, INPUT);
+  
+  motorsEnabled = false;
 }
 
 void Motors::enable_motors()
 {
-		motorsEnabled = true;
-  left_front_motor->attach(left_front);  // attaches the servo on pin left_front to turn Vex Motor Controller 29 On
-  left_rear_motor->attach(left_rear);  // attaches the servo on pin left_rear to turn Vex Motor Controller 29 On
-  right_rear_motor->attach(right_rear);  // attaches the servo on pin right_rear to turn Vex Motor Controller 29 On
-  right_front_motor->attach(right_front);  // attaches the servo on pin right_front to turn Vex Motor Controller 29 On
+  left_front_motor->attach(LEFT_FRONT);  
+  left_rear_motor->attach(LEFT_REAR); 
+  right_rear_motor->attach(RIGHT_REAR); 
+  right_front_motor->attach(RIGHT_FRONT);
+
+  motorsEnabled = true;
 }
 
 
 void Motors::powerMotors() { // this function sends power to motors all at once
   calcMotorPower(x_controlEffort, y_controlEffort, rotateControl);
 
-  left_front_motor->writeMicroseconds(1500 + motorPower[0]);
-  right_front_motor->writeMicroseconds(1500 + motorPower[1]);
-  left_rear_motor->writeMicroseconds(1500 + motorPower[2]);
-  right_rear_motor->writeMicroseconds(1500 + motorPower[3]);
+  left_front_motor->writeMicroseconds(ZERO_OFFSET + motorPower[0]);
+  right_front_motor->writeMicroseconds(ZERO_OFFSET + motorPower[1]);
+  left_rear_motor->writeMicroseconds(ZERO_OFFSET + motorPower[2]);
+  right_rear_motor->writeMicroseconds(ZERO_OFFSET + motorPower[3]);
 }
 
-//new stuff for openloop control
+
 void Motors::calcMotorPower(double control_x, double control_y, double w) {
 
   motorPower[0] = (control_x + control_y + dim * w);
   motorPower[1] = (control_x - control_y + dim * w);
   motorPower[2] = (-control_x + control_y + dim * w);
   motorPower[3] = (-control_x - control_y + dim * w);
-
+  
+  double maxValue=abs(motorPower[0]);
+  for (int i=1;i<sizeof(motorPower);i++){
+	  if(maxValue<abs(motorPower[i])) maxValue=abs(motorPower[i]);
+  }
+  //Scaling motorPowers proportionally to a valid range
+  for(int i=0;i<sizeof(motorPower);i++){
+	  motorPower[i]= (motorPower[i]/maxValue)*MAXPOWER;
+  }
 }
+
+
+
 
 void Motors::motorsDebug()  //This is for debugging and testing DirectionalControl
 {
@@ -77,8 +90,8 @@ void Motors::motorsDebug()  //This is for debugging and testing DirectionalContr
   Serial.println(motorPower[2], 4);
   Serial.println(motorPower[3], 4 );
 
-  left_front_motor->writeMicroseconds(1500 + motorPower[0]);
-  right_front_motor->writeMicroseconds(1500 + motorPower[1]);
-  left_rear_motor->writeMicroseconds(1500 + motorPower[2]);
-  right_rear_motor->writeMicroseconds(1500 + motorPower[3]);
+  left_front_motor->writeMicroseconds(ZERO_OFFSET + motorPower[0]);
+  right_front_motor->writeMicroseconds(ZERO_OFFSET + motorPower[1]);
+  left_rear_motor->writeMicroseconds(ZERO_OFFSET + motorPower[2]);
+  right_rear_motor->writeMicroseconds(ZERO_OFFSET + motorPower[3]);
 }

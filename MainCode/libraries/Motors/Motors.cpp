@@ -59,9 +59,12 @@ void Motors::calcMotorPower(double control_x, double control_y, double w) {
   for (int i=1;i<sizeof(motorPower);i++){
 	  if(maxValue<abs(motorPower[i])) maxValue=abs(motorPower[i]);
   }
-  //Scaling motorPowers proportionally to a valid range
+  
+  //Scaling motorPowers proportionally to a valid range if currently out of range.
+  if(maxValue>MAXPOWER){
   for(int i=0;i<sizeof(motorPower);i++){
 	  motorPower[i]= (motorPower[i]/maxValue)*MAXPOWER;
+  }
   }
 }
 

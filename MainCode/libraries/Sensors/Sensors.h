@@ -13,10 +13,10 @@
 #define IR_REAR_PIN 62//A8
 #define IR_REAR_POSITION_CORRECTION 52 //This is a correction factor in mm that is added to take distance from center of robot.
 
-
+#define UPDATEGYROTIME 10 //this is for a 10ms read period
+#define GYRO_READ_TIME  0.01 //this is for a 10ms read period
 #define GYRO_PIN 69 //A15
 #define GYRO_CORRECTION 1.1 //correction factor in degrees per second
-#define GYRO_READ_TIME  0.01 //this is for a 10ms loop. Change to suit
 
 #define SONAR_TRIG_PIN 48 //D48
 #define SONAR_ECHO_PIN 49 //D49
@@ -26,7 +26,7 @@
 #include <math.h>
 
 class Sensors {
-public: //These are the methods
+public:
     // constructors
     Sensors();
 
@@ -37,35 +37,39 @@ public: //These are the methods
 	float getAngle();
 	float getParallel();
 	bool getGyroState();
+	bool getParallelError();
 
     // utilities
-uint16_t readIr(byte readPin, float Coefficents[],uint16_t Constraints[]);
-void enableGyro();
-void disableGyro();
-void updateAngle();
-void updateLeftDistance();
-void updateFrontDistance();
-void updateRearDistance();
-void updateParallel();
+	uint16_t readIr(byte readPin, float Coefficents[],uint16_t Constraints[]);
+	void enableGyro();
+	void disableGyro();
+	void updateAngle();
+	void updateLeftDistance();
+	void updateFrontDistance();
+	void updateRearDistance();
+	void updateParallel();
 
 
-private:  //These are the variables
- //These need getters
-  uint16_t frontDistance; 
-  uint16_t rearDistance;
-  uint16_t leftDistance;  
-  float Angle;
-  float Parallel;
-  bool gyroState;
-  
-  //These are not accessed by external code. //Move the assigning of values to the constructor.
-  const float irLeftFront[3]= {0.0182,0.0371,0.4368};; //this is bullshit. Need to think about the short range IR
-  const float irLeftBack[3]= {-0.0002,0.1025,-7.9823};
-  const float irForward[3]= {0,0.0232,-0.7972};
-  const float irRear[3]= {0,0.0127,0.0566};
-  const uint16_t longConstraints[2] ={110,490}; //Need to confirm this in matlab
-  const uint16_t shortConstraints[2]={115,630};
-
+private: 
+	//Robot Position variables
+	uint16_t frontDistance; 
+	uint16_t rearDistance;
+	uint16_t leftDistance;  
+	float Angle; // angle positive if rotated clockwise
+	float Parallel; // angle positive if rotated clockwise
+	
+	//Sensor state variables
+	bool parallelError;
+	bool gyroState;
+	
+	//IR calibration coefficent and calibration range limits
+	const float irLeftFront[3]= {-0.0002,0.1007,-7.5392};
+	const float irLeftBack[3]= {-0.0002,0.1025,-7.9823};
+	const float irForward[3]= {0,0.0232,-0.7972};
+	const float irRear[3]= {0,0.0127,0.0566};
+	const uint16_t longConstraints[2] ={110,500}; //Need to confirm this in matlab
+	const uint16_t shortConstraints[2]={40,400}; //constraints are relative to analog reading where read range is 0-1024 //Should change these to mm and apply after the calibration equation.
+	
 };
 
 #endif

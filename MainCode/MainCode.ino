@@ -8,12 +8,15 @@
 #include "libraries\Sensors\Sensors.cpp"
 #include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
+#include "libraries\Kalman\Kalman.h"
+#include "libraries\Kalman\Kalman.cpp"
 
 
 //Initializing global objects
 Controllers controlSystem;
 Sensors sensor;
 Motors motor;
+Kalman kalman;
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
@@ -60,6 +63,7 @@ void loop(void)
   //Updating gryo at 10 ms interval
   if (millis() - updateAngleMillis > UPDATEGYROTIME) { //UPDATEGRYOTIME is defined in the sensors class
     sensor.updateAngle();
+    motor.calcChangeDistance();
     updateAngleMillis = millis();
   }
 

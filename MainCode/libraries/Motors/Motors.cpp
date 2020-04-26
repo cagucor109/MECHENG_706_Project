@@ -12,6 +12,14 @@ bool Motors::isEnabled(){
 	return motorsEnabled;
 }
 
+double Motors::getDistanceChange_x() {
+	return distanceChange_x;
+}
+
+double Motors::getDistanceChange_y() {
+	return distanceChange_y;
+}
+
 void Motors::disable_motors()
 {
   left_front_motor->detach();  
@@ -68,7 +76,26 @@ void Motors::calcMotorPower(double control_x, double control_y, double w) {
   }
 }
 
+double Motors::calcChangeDistance() {
 
+	int i;
+	
+	for (i = 0; i<4; i++) {
+		this->theta_dot[i] = POWER2ROTATION_FACTOR * motorPower[i];
+	}
+	
+	//forward kinematics
+	this->velocity_x = this->theta_dot[0] + this->theta_dot[1] + this->theta_dot[2] + this->theta_dot[3];
+	this->velocity_y = this->theta_dot[0]*-1 + this->theta_dot[1] + this->theta_dot[2] + this->theta_dot[3]*-1;
+	
+	//update prevVelocity for next iteration
+	this->prevVelocity_x = this->velocity_x;
+	this->prevVelocity_y = this->velocity_y;
+	
+	this->distanceChange_x = ((this->prevVelocity_x + this->velocity_x)/2)*TIMESTEP;
+	this->distanceChange_y = ((this->prevVelocity_y + this->velocity_y)/2)*TIMESTEP;
+ 
+}
 
 
 void Motors::motorsDebug()  //This is for debugging and testing DirectionalControl
@@ -98,3 +125,5 @@ void Motors::motorsDebug()  //This is for debugging and testing DirectionalContr
   left_rear_motor->writeMicroseconds(ZERO_OFFSET + motorPower[2]);
   right_rear_motor->writeMicroseconds(ZERO_OFFSET + motorPower[3]);
 }
+
+

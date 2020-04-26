@@ -50,10 +50,10 @@ void Motors::powerMotors() { // this function sends power to motors all at once
 
 void Motors::calcMotorPower(double control_x, double control_y, double w) {
 
-  motorPower[0] = (control_x + control_y + dim * w);
-  motorPower[1] = (control_x - control_y + dim * w);
-  motorPower[2] = (-control_x + control_y + dim * w);
-  motorPower[3] = (-control_x - control_y + dim * w);
+  motorPower[0] = (control_x + control_y - dim * w);
+  motorPower[1] = (control_x - control_y - dim * w);
+  motorPower[2] = (-control_x + control_y - dim * w);
+  motorPower[3] = (-control_x - control_y - dim * w);
   
   double maxValue=abs(motorPower[0]);
   for (int i=1;i<sizeof(motorPower);i++){

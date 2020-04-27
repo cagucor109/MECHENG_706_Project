@@ -77,7 +77,11 @@ void Motors::calcMotorPower(double control_x, double control_y, double w) {
 }
 
 double Motors::calcChangeDistance() {
-
+	
+	newTime=millis();
+	timeStep=newTime-previousTime;
+	previousTime=newTime;
+		
 	int i;
 	
 	for (i = 0; i<4; i++) {
@@ -92,8 +96,8 @@ double Motors::calcChangeDistance() {
 	this->prevVelocity_x = this->velocity_x;
 	this->prevVelocity_y = this->velocity_y;
 	
-	this->distanceChange_x = ((this->prevVelocity_x + this->velocity_x)/2)*TIMESTEP;
-	this->distanceChange_y = ((this->prevVelocity_y + this->velocity_y)/2)*TIMESTEP;
+	this->distanceChange_x = ((this->prevVelocity_x + this->velocity_x)/2)*timeStep;
+	this->distanceChange_y = ((this->prevVelocity_y + this->velocity_y)/2)*timeStep;
  
 }
 

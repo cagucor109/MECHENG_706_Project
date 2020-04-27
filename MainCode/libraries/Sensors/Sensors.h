@@ -63,12 +63,12 @@ private:
 	bool gyroState;
 	
 	//IR calibration coefficent and calibration range limits
-	const float irLeftFront[3]= {-0.0002,0.1007,-7.5392};
-	const float irLeftBack[3]= {-0.0002,0.1025,-7.9823};
-	const float irForward[3]= {0,0.0232,-0.7972};
-	const float irRear[3]= {0,0.0127,0.0566};
-	const uint16_t longConstraints[2] ={110,500}; //Need to confirm this in matlab
-	const uint16_t shortConstraints[2]={40,400}; //constraints are relative to analog reading where read range is 0-1024 //Should change these to mm and apply after the calibration equation.
+	float irLeftFront[3]= {-0.0002,0.1007,-7.5392};
+	float irLeftBack[3]= {-0.0002,0.1025,-7.9823};
+	float irForward[3]= {0,0.0232,-0.7972};
+	float irRear[3]= {0,0.0127,0.0566};
+	uint16_t longConstraints[2] ={110,500}; //Need to confirm this in matlab
+	uint16_t shortConstraints[2]={40,400}; //constraints are relative to analog reading where read range is 0-1024 //Should change these to mm and apply after the calibration equation.
 	
 };
 

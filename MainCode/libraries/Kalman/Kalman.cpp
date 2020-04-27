@@ -2,35 +2,42 @@
  
 // constructor
 Kalman::Kalman() {
-  processNoise_ = 8;
-  sensorNoise_ = 1;
+  processNoise = 8;
+  sensorNoise = 1;
 }
 
 // setters
 void Kalman::setProcessNoise(double inputProcessNoise) {
-  processNoise_ = inputProcessNoise;
+  processNoise = inputProcessNoise;
 }
 
+double Kalman::getFilteredValue(){
+	return this->prevEst;
+}
+	
 void Kalman::setSensorNoise(double inputSensorNoise) {
-  sensorNoise_ = inputSensorNoise;
+  sensorNoise = inputSensorNoise;
+}
+
+void Kalman::setPrevEst(double previousEst){
+	this->prevEst = previousEst;
 }
 
 // utilites
-double Kalman::filter(double rawData, double displacement){   // Kalman Filter
+void Kalman::filter(double rawData, double displacement){   // Kalman Filter
   double priorEst, postEst, priorCovar, postCovar, kalmanGain;
 
   //Prediction Step
-  priorEst = this->prevEst_ + displacement;  
-  priorCovar = this->processNoise_; 
+  priorEst = this->prevEst + displacement;  
+  priorCovar = this->processNoise; 
 
   // Correction Step
-  kalmanGain = priorCovar/(priorCovar + this->sensorNoise_);
+  kalmanGain = priorCovar/(priorCovar + this->sensorNoise);
   postEst = priorEst + kalmanGain*(rawData - priorEst);
   postCovar = (1 - kalmanGain)*priorCovar;
 
   // for next time step
-  this->prevEst_ = postEst;
+  this->prevEst = postEst;
 
-  return postEst;
 }
 

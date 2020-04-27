@@ -16,7 +16,8 @@
 Controllers controlSystem;
 Sensors sensor;
 Motors motor;
-Kalman kalman;
+Kalman kalmanX;
+Kalman kalmanY;
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
@@ -27,6 +28,8 @@ HardwareSerial *SerialCom;
 #define LEFTTOLERANCE 10
 #define FRONTTOLERANCE 150
 #define UPDATETIME 100
+#define MAXTURNS 4
+#define FIXEDROTATE 10
 
 //----------------------State machines-------------------------------------------------------------------------------------------------------------------------------------
 enum STATE {
@@ -63,7 +66,7 @@ void loop(void)
   //Updating gryo at 10 ms interval
   if (millis() - updateAngleMillis > UPDATEGYROTIME) { //UPDATEGRYOTIME is defined in the sensors class
     sensor.updateAngle();
-    motor.calcChangeDistance();
+    
     updateAngleMillis = millis();
   }
 
@@ -74,11 +77,12 @@ void loop(void)
     sensor.updateLeftDistance();
     sensor.updateParallel();
     sensor.updateFrontDistance();
-
+    filter();
     //Checking battery state
     if (!is_battery_voltage_OK()) machine_state = STOPPED;
 
     //Next state Finite-state machine Code
+    // This logic decides when to exit a state and which state to transition to
     switch (machine_state) {
       case INITIALISING:
         if (isInit)
@@ -87,18 +91,23 @@ void loop(void)
           machine_state = INITIALISING;
         break;
       case ALIGN:
-        if (aligned)  machine_state = EDGE_FOLLOW;
+        if (aligned)  {
+          kalmanX.setPrevEst(150);
+          machine_state = EDGE_FOLLOW;
+        }
         else
           machine_state = ALIGN;
         break;
       case TURNING:
         if (aligned) machine_state = ALIGN;
         break;
-      case EDGE_FOLLOW:
+      case EDGE_FOLLOW: 
+        // checks distance infront and whether it should exit
+        // if robot has made    
         if (front) {
           machine_state = TURNING;
           turnCounter++;
-          if (turnCounter == 4)  {
+          if (turnCounter == MAXTURNS)  {
             turnCounter = 0;
             machine_state = FINISHED;
           }
@@ -114,17 +123,24 @@ void loop(void)
 
 
     //Output State Machine
+    // This logic determines the output based on the current state
     switch (machine_state) {
       case INITIALISING:
         initialising();
         break;
       case ALIGN:
+        // set sensor noise to 0 to only rely on sensor input
+        kalmanX.setSensorNoise(0);
+        kalmanX.setProcessNoise(10);
         align();
         break;
       case TURNING:
         turn();
         break;
       case EDGE_FOLLOW:
+        // reset sensor and process noise to default
+        kalmanX.setSensorNoise(1);
+        kalmanX.setProcessNoise(8);
         follow();
         break;
       case STOPPED:
@@ -138,6 +154,7 @@ void loop(void)
 }
 
 //----------------------Next State Functions-------------------------------------------------------------------------------------------------------------------------------
+// Boolean functions that return true when the exit condition is met
 bool isInit() {
   // check for initialisation errors
   if (motor.isEnabled() == true) return 1;
@@ -145,6 +162,7 @@ bool isInit() {
 }
 
 bool aligned() {
+  // exit condition if robot is aligned with wall and correct distance from wall.
   if ((abs(150 - sensor.getLeftDistance()) <= LEFTTOLERANCE) && (abs(sensor.getParallel()) <= ANGLETOLERANCE)) {
     return 1;
   } else {
@@ -156,28 +174,42 @@ bool reset() {
   else return 0;
 }
 bool front() {
+  // if robot is within tolerance to wall infront
   if (sensor.getFrontDistance() <= FRONTTOLERANCE)  return 1;
   else  return 0;
 }
 
 //-----------------------State Output Functions----------------------------------------------------------------------------------------------------------------------------
-
+// These void functions output control to the robot based on current state.
 void initialising() {
   SerialCom->println("Enabling Motors");
   motor.enable_motors();
+  // Sets up kalman filter for Y direction control
+  // ignores motion model and smoothes motion model data
+  kalmanY.setProcessNoise(100);
+  kalmanY.setSensorNoise(2);
   return;
 }
 
 void align() {
+  // Outputs control efforts to motor to align robot parallel with wall
+  // and 15cm perpendicular distance.
   sensor.disableGyro();
   if (controlSystem.getDesiredAngle() != 0) controlSystem.setDesiredAngle(0);
-  if (!sensor.getParallelError()) motor.rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", sensor.getParallel()));
-  if (abs(sensor.getParallel()) < ANGLETOLERANCE) { //By setting this value to the define ANGLETOLERANCE the robot will be parallel before changing left distance. Increase to greater than the defined tolerance to make both actions at the same time
-    motor.x_controlEffort = controlSystem.controlP( "left", controlSystem.calculateError("left", sensor.getLeftDistance()));
+  if (!sensor.getParallelError()) { // if there is no error ie wall detected on left side
+    motor.rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", sensor.getParallel()));
+  }else { // if error detected (no wall is detected on left side) rotate CCW until wall is found.
+    motor.rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", FIXEDROTATE));
+  }
+  //By setting this value to the define ANGLETOLERANCE the robot will be parallel before changing left distance. Increase to greater than the defined tolerance to make both actions at the same time
+  if (abs(sensor.getParallel()) < ANGLETOLERANCE) { 
+    motor.x_controlEffort = controlSystem.controlP( "left", controlSystem.calculateError("left", kalmanX.getFilteredValue()));
   }
   motor.powerMotors();// compiles the control efforts and sends power to motor drivers.
 }
+
 void turn() {
+  // uses gyro to turn 90 degrees
   if (sensor.getGyroState() == 0) sensor.enableGyro();
   if (controlSystem.getDesiredAngle() != 90)  controlSystem.setDesiredAngle(90);// directs rotation control to target previously set at 90 degrees.
   motor.rotateControl = controlSystem.controlP( "angle", controlSystem.calculateError("angle", sensor.getAngle()));
@@ -185,19 +217,19 @@ void turn() {
 }
 
 void follow() {
+  // utilises align function to align with wall whilst also driving forward based on 
+  // distance infront. Control efforts are summed to increase timing efficiency
   align(); //Align handles left distance and parallel with the wall
-  motor.y_controlEffort = controlSystem.controlP( "front", controlSystem.calculateError("front", sensor.getFrontDistance()));
+  motor.y_controlEffort = controlSystem.controlP( "front", controlSystem.calculateError("front", kalmanY.getFilteredValue()));
   motor.powerMotors(); // compiles the control efforts and sends power to motor drivers.
 }
 void finished() {
-  // stop motor controls
+  // stop motor controls when path is completed
   motor.x_controlEffort = 0;
   motor.y_controlEffort = 0;
   motor.rotateControl = 0;
   motor.powerMotors();
 }
-
-
 void stopped() {
   //Stop if Lipo Battery voltage is too low, to protect Battery
   static byte counter_lipo_voltage_ok;
@@ -206,12 +238,17 @@ void stopped() {
   if (motor.isEnabled())motor.disable_motors();
   slow_flash_LED_builtin();
 }
+//----------------------Helper functions-------------------------------------------------------------------------------------------------------------------------------
 
-
-
-//----------------------Battery check and IO-------------------------------------------------------------------------------------------------------------------------------
+void filter(){
+  // Filter sensor inputs for left distance and front distance
+  motor.calcChangeDistance();
+  kalmanX.filter(sensor.getLeftDistance(), motor.getDistanceChange_x());
+  kalmanY.filter(sensor.getFrontDistance(), 0);
+}
 
 bool userInput() {
+  // Determines if robot should take another lap
   Serial.println(" ");
   Serial.println("Another Lap? Y/N");
   char restartCtrl;

@@ -12,15 +12,17 @@ class Kalman {
     // setters
     void setSensorNoise(double inputSensorNoise);
     void setProcessNoise(double inputProcessNoise);
-   
-    
+    void setPrevEst(double previousEst);
+    // getter
+	double getFilteredValue();
+	
     // utilities
-    double filter(double rawdata, double distance);
+    void filter(double rawdata, double distance);
 
   private:
-    double processNoise_;
-    double sensorNoise_;
-    double prevEst_;
+    double processNoise;
+    double sensorNoise;
+    double prevEst;
 };
 
 #endif

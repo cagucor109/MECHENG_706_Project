@@ -197,13 +197,15 @@ void align() {
   sensor.disableGyro();
   if (controlSystem.getDesiredAngle() != 0) controlSystem.setDesiredAngle(0);
   if (!sensor.getParallelError()) { // if there is no error ie wall detected on left side
-    motor.rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", sensor.getParallel()));
+    // control Y with PID controller to be tuned in real life
+    motor.rotateControl = controlSystem.controlPID("angle", controlSystem.calculateError("angle", sensor.getParallel()));
   }else { // if error detected (no wall is detected on left side) rotate CCW until wall is found.
-    motor.rotateControl = controlSystem.controlP("angle", controlSystem.calculateError("angle", FIXEDROTATE));
+    motor.rotateControl = controlSystem.controlPID("angle", controlSystem.calculateError("angle", FIXEDROTATE));
   }
   //By setting this value to the define ANGLETOLERANCE the robot will be parallel before changing left distance. Increase to greater than the defined tolerance to make both actions at the same time
   if (abs(sensor.getParallel()) < ANGLETOLERANCE) { 
-    motor.x_controlEffort = controlSystem.controlP( "left", controlSystem.calculateError("left", kalmanX.getFilteredValue()));
+    // control Y with PID controller to be tuned in real life
+    motor.x_controlEffort = controlSystem.controlPID( "left", controlSystem.calculateError("left", kalmanX.getFilteredValue()));
   }
   motor.powerMotors();// compiles the control efforts and sends power to motor drivers.
 }
@@ -212,7 +214,8 @@ void turn() {
   // uses gyro to turn 90 degrees
   if (sensor.getGyroState() == 0) sensor.enableGyro();
   if (controlSystem.getDesiredAngle() != 90)  controlSystem.setDesiredAngle(90);// directs rotation control to target previously set at 90 degrees.
-  motor.rotateControl = controlSystem.controlP( "angle", controlSystem.calculateError("angle", sensor.getAngle()));
+  // control Y with PID controller to be tuned in real life
+  motor.rotateControl = controlSystem.controlPID( "angle", controlSystem.calculateError("angle", sensor.getAngle()));
   motor.powerMotors(); // compiles the control efforts and sends power to motor drivers.
 }
 
@@ -220,7 +223,8 @@ void follow() {
   // utilises align function to align with wall whilst also driving forward based on 
   // distance infront. Control efforts are summed to increase timing efficiency
   align(); //Align handles left distance and parallel with the wall
-  motor.y_controlEffort = controlSystem.controlP( "front", controlSystem.calculateError("front", kalmanY.getFilteredValue()));
+  // control Y with PID controller to be tuned in real life
+  motor.y_controlEffort = controlSystem.controlPID( "front", controlSystem.calculateError("front", kalmanY.getFilteredValue()));
   motor.powerMotors(); // compiles the control efforts and sends power to motor drivers.
 }
 void finished() {

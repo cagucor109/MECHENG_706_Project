@@ -7,7 +7,7 @@
 #define MAXPOWER 500 //change this to make the robot go faster, valid range is 0 to 800
 #define ZERO_OFFSET 1500 //Zero value of servo motors
 #define POWER2ROTATION_FACTOR 0.01 //PWM power value sent to motors * factor = angular velocity of shaft
-#define TIMESTEP 0.01 //timestep update for integrating velocity to distance
+//#define TIMESTEP 0.01 //timestep update for integrating velocity to distance
 
 
 #define LEFT_FRONT 46
@@ -58,6 +58,9 @@ class Motors {
 	double velocity_y;
 	double distanceChange_x;
 	double distanceChange_y;
+	double previousTime
+	double newTime
+	double timeStep
 	
 };
 

@@ -255,7 +255,7 @@ bool userInput() {
   // Determines if robot should take another lap
   Serial.println(" ");
   Serial.println("Another Lap? Y/N");
-  char restartCtrl;
+  String restartCtrl;
   while (Serial.available() == 0) {} //wait for user input
   restartCtrl = Serial.read(); // read input
   if (restartCtrl.equals("Y")) return 1;

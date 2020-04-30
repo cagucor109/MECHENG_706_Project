@@ -1,4 +1,5 @@
-# MECHENG_706_Projec
+# MECHENG_706_Project
+Group 21
 
 Instructions on how to run:
 Open the MainCode.ino file in the Arduino IDE.

@@ -64,13 +64,13 @@ void Motors::calcMotorPower(double control_x, double control_y, double w) {
   motorPower[3] = (-control_x - control_y + dim * w);
   
   double maxValue=abs(motorPower[0]);
-  for (int i=1;i<sizeof(motorPower);i++){
+  for (int i=1;i<4;i++){
 	  if(maxValue<abs(motorPower[i])) maxValue=abs(motorPower[i]);
   }
   
   //Scaling motorPowers proportionally to a valid range if currently out of range.
   if(maxValue>MAXPOWER){
-  for(int i=0;i<sizeof(motorPower);i++){
+  for(int i=0;i<4;i++){
 	  motorPower[i]= (motorPower[i]/maxValue)*MAXPOWER;
   }
   }

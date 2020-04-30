@@ -258,7 +258,7 @@ bool userInput() {
   char restartCtrl;
   while (Serial.available() == 0) {} //wait for user input
   restartCtrl = Serial.read(); // read input
-  if (strcmp(restartCtrl, "Y")) return 1;
+  if (restartCtrl.equals("Y")) return 1;
   else return 0;
 }
 

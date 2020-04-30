@@ -37,9 +37,9 @@ class Motors {
 	 
 
 			
-	float x_controlEffort;	//Reconfigure these to be private with getters and setters or make external variables that are passed via methods.
-    float y_controlEffort;	//Reconfigure these to be private with getters and setters or make external variables that are passed via methods.
-    float rotateControl;	//Reconfigure these to be private with getters and setters or make external variables that are passed via methods.
+	float x_controlEffort;	
+    float y_controlEffort;	
+    float rotateControl;
 
   private:
 	

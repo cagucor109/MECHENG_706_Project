@@ -6,7 +6,7 @@
 class Kalman {
   public:
 
-    //constructors?
+    // constructor
     Kalman();
 
     // setters

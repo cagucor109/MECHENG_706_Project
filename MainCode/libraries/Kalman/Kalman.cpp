@@ -4,15 +4,12 @@
 Kalman::Kalman() {
   processNoise = 8;
   sensorNoise = 1;
+  prevEst = 0;
 }
 
 // setters
 void Kalman::setProcessNoise(double inputProcessNoise) {
   processNoise = inputProcessNoise;
-}
-
-double Kalman::getFilteredValue(){
-	return this->prevEst;
 }
 	
 void Kalman::setSensorNoise(double inputSensorNoise) {
@@ -21,6 +18,11 @@ void Kalman::setSensorNoise(double inputSensorNoise) {
 
 void Kalman::setPrevEst(double previousEst){
 	this->prevEst = previousEst;
+}
+
+// getters
+double Kalman::getFilteredValue(){
+	return this->prevEst;
 }
 
 // utilites

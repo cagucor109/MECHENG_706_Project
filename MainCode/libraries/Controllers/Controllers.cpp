@@ -35,7 +35,7 @@ double Controllers::getDesiredAngle(){
 
 // utilities
 // error positive if rotated clockwise
-double Controllers::calculateError(char *field, double reading){
+double Controllers::calculateError(const char *field, double reading){
     if(field == "front"){
         return reading - desiredDistFront_ ;
     }else if (field == "right"){
@@ -45,7 +45,7 @@ double Controllers::calculateError(char *field, double reading){
     }
 }
 
-double Controllers::controlP(char *field, double error){
+double Controllers::controlP(const char *field, double error){
     double P_GAIN;
 
     if(field == "front"){
@@ -64,7 +64,7 @@ double Controllers::controlP(char *field, double error){
 
 }
 
-double Controllers::controlPI(char *field, double error){
+double Controllers::controlPI(const char *field, double error){
     double P_GAIN;
     double I_GAIN;
 
@@ -88,7 +88,7 @@ double Controllers::controlPI(char *field, double error){
 
 }
 
-double Controllers::controlPID(char *field, double error){
+double Controllers::controlPID(const char *field, double error){
     double P_GAIN;
     double I_GAIN;
     double D_GAIN;

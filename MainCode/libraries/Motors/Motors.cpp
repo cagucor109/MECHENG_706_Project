@@ -102,7 +102,7 @@ double Motors::calcChangeDistance() {
 }
 
 
-void Motors::motorsDebug()  //This is for debugging and testing DirectionalControl
+void Motors::motorsDebug()  //This is for debugging and testing motorPowerCalc
 {
   Serial.println(" ");
   Serial.println("Enter x component");

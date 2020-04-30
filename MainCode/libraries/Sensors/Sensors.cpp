@@ -2,7 +2,6 @@
 
 // constructors
 Sensors::Sensors(){
-//Need to set some variables that the user should have access to.
 
 }
 

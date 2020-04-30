@@ -58,9 +58,9 @@ class Motors {
 	double velocity_y;
 	double distanceChange_x;
 	double distanceChange_y;
-	double previousTime
-	double newTime
-	double timeStep
+	double previousTime;
+	double newTime;
+	double timeStep;
 	
 };
 

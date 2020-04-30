@@ -31,10 +31,10 @@ public:
     double getDesiredAngle();
 
     // utilities
-    double calculateError(char *field, double reading);
-    double controlP(char *field, double error);
-    double controlPI(char *field, double error);
-    double controlPID(char *field, double error);
+    double calculateError(const char *field, double reading);
+    double controlP(const char *field, double error);
+    double controlPI(const char *field, double error);
+    double controlPID(const char *field, double error);
 
 private:
     double desiredDistFront_;

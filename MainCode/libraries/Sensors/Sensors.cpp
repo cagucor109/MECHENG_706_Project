@@ -83,7 +83,7 @@ void Sensors::updateLeftDistance(){
 	float reading=pulseIn(SONAR_ECHO_PIN,HIGH);
 
 	//Apply speed of sound correction to calculate distance in mm.
-    reading=reading/(2.94*2); //340m/s  give 2.941176ms/mm. This is then halved to account for rebounding
+    reading=reading/(2.94*2); //343m/s  give 2.941176ms/mm. This is then halved to account for rebounding
 	reading+=SONAR_POSITION_CORRECTION; //applying offset to center reading on the center of the robot.
 	this->leftDistance=reading;
 }

@@ -26,6 +26,12 @@ Controllers controlSystem;
 Sensors sensor;
 Motors motor;
 
+//To be replaced by proper readings variables
+int obstacleFrontDistance;
+int photoReadings;
+int firesLeft = 2;
+#define FIRETHRESHOLD 2000; //wild guess
+
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
 HardwareSerial *SerialCom;
@@ -71,7 +77,7 @@ void main () {
   sensor.updateDistances();
   sensor.updatePhotos();
   Suppressor();
-  motor.updateMotors();
+  motor.powerMotors();
 }
 
 //----------------------Sensing functions------------------------------------------------------------------------------------------------------------------------------------------
@@ -79,24 +85,60 @@ bool locate_output_flag() {
 
 }
 bool extinguish_output_flag() {
-
+  if ((obstacleFrontDistance < 200) && (photoReadings > FIRETHRESHOLD)){
+    return true;
+  } else {
+    return false;
+  }
 }
 bool moveToFire_output_flag() {
 
 }
 bool halt_output_flag() {
-
+  if (firesLeft == 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 bool avoid_output_flag() {
 
 }
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
-void halt() {
-  halt_command = STOP;
-  halt_output_flag = 1;
+void halt_command() {
+  motors.desiredControl(0,0,0);
+  motors.powerMotors();
 }
 
+void extinguish_command(){
+  motors.controlFan(true);
+  delay(10000);
+  motors.controlFan(false); //turn fan off after 10 seconds
+  firesLeft--;
+}
+
+void Suppressor() {
+  // This function calls sensing functions to evaluates
+  // which command to output to motors
+
+  // second lowest priority`
+  if (moveToFire_output_flag() == 1) {
+    moveToFire_command();
+  } else  if (avoid_output_flag() == 1) {
+    avoid_command();
+  } else  if (extinguish_output_flag() == 1) {
+    extinguish_command();
+  } else if (halt_output_flag() == 1) {
+    // highest priority
+    halt_command();
+  } else { // default behaviour/lowest priority
+    locate_command();
+  }
+  sleep(tick);
+}
+
+//----------------------- case study code ---------------------------------------------------------
 
 void avoid() {
   intval;
@@ -115,7 +157,6 @@ void avoid() {
     avoid_output_flag = 0;
   }
 }
-
 
 void extinguish() {
   int left_photo, right_photo, delta;
@@ -163,23 +204,3 @@ void moveToFire() {
     sleep(0.2);
   } else  moveToFire_output_flag = 0
   }
-
-void Suppressor() {
-  // This function calls sensing functions to evaluates
-  // which command to output to motors
-
-  // second lowest priority`
-  if (moveToFire_output_flag() == 1) {
-    moveToFire_command();
-  } else  if (avoid_output_flag() == 1) {
-    avoid_command();
-  } else  if (extinguish_output_flag() == 1) {
-    extinguish_command();
-  } else if (halt_output_flag() == 1) {
-    // highest priority
-    halt_command();
-  } else { // default behaviour/lowest priority
-    locate_command();
-  }
-  sleep(tick);
-}

@@ -25,14 +25,12 @@
 Controllers controlSystem;
 Sensors sensor;
 Motors motor;
-// might have fused these filters with sensor library
-//Kalman kalmanX;
-//Kalman kalmanY;
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
 HardwareSerial *SerialCom;
 //----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
+#define FIRES_LEFT 2
 
 // Enum for motion states
 enum MOTION {
@@ -63,15 +61,36 @@ int locate_output_flag;
 
 MOTION motor_input;
 
-// seems thay have declared command twice?
-// int cruise_command;
-// int cruise_output_flag;
-// int extinguish_command;
-// int extinguish_output_flag;
-// int avoid_command;
-// int avoid_output_flag;
-// int moveToFire_command;
-// int moveToFire_output_flag;
+//----------------------Main loop------------------------------------------------------------------------------------------------------------------------------------------
+
+void main () {
+  // the main loop updates sensors then selects the behaviour
+  // based on the sensor inputs and sends them to the motors.
+
+  // update functions need to be inplemented
+  sensor.updateDistances();
+  sensor.updatePhotos();
+  Suppressor();
+  motor.updateMotors();
+}
+
+//----------------------Sensing functions------------------------------------------------------------------------------------------------------------------------------------------
+bool locate_output_flag() {
+
+}
+bool extinguish_output_flag() {
+
+}
+bool moveToFire_output_flag() {
+
+}
+bool halt_output_flag() {
+
+}
+bool avoid_output_flag() {
+
+}
+//----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
 void halt() {
   halt_command = STOP;
@@ -143,27 +162,24 @@ void moveToFire() {
     moveToFire_command = LEFT_TURN;
     sleep(0.2);
   } else  moveToFire_output_flag = 0
-}
+  }
 
 void Suppressor() {
-  if (locate_output_flag == 1) {
-    motor_input = locate_output;
-  } if (moveToFire_output_flag == 1) {
-    motor_input = moveToFire_output;
-  } if (avoid_output_flag == 1) {
-    motor_input = avoid_output;
-  } if (extinguish_output_flag == 1) {
-    motor_input = extinguish_output;
-  } if (halt_output_flag == 1) {
-    motor_input = halt_output;
-  } sleep(tick);
-}
+  // This function calls sensing functions to evaluates
+  // which command to output to motors
 
-void main () {
-  start_process(motor_driver());
-  start_process(cruise());
-  start_process(extinguish());
-  start_process(avoid());
-  start_process(moveToFire());
-  start_process(arbitrate());
+  // second lowest priority`
+  if (moveToFire_output_flag() == 1) {
+    moveToFire_command();
+  } else  if (avoid_output_flag() == 1) {
+    avoid_command();
+  } else  if (extinguish_output_flag() == 1) {
+    extinguish_command();
+  } else if (halt_output_flag() == 1) {
+    // highest priority
+    halt_command();
+  } else { // default behaviour/lowest priority
+    locate_command();
+  }
+  sleep(tick);
 }

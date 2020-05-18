@@ -1,6 +1,6 @@
 // Project 2 (Firefighter project) for MechEng706 Mechatronics design
 // Authors (Group 21):  Narada Hu, nhu769
-//                   :
+//                   :  Rachel Li, rli142
 //                   :
 //                   :
 

@@ -30,13 +30,13 @@ Motors motor;
 int obstacleFrontDistance;
 int photoReadings;
 int firesLeft = 2;
-#define FIRETHRESHOLD 2000; //wild guess
+
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
 HardwareSerial *SerialCom;
 //----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
-#define FIRES_LEFT 2
+#define FIREDISTANCE
 
 // Enum for motion states
 enum MOTION {
@@ -85,7 +85,7 @@ bool locate_output_flag() {
 
 }
 bool extinguish_output_flag() {
-  if ((obstacleFrontDistance < 200) && (photoReadings > FIRETHRESHOLD)){
+  if (obstacleFrontDistance < FIREDISTANCE){
     return true;
   } else {
     return false;
@@ -95,7 +95,7 @@ bool moveToFire_output_flag() {
 
 }
 bool halt_output_flag() {
-  if (firesLeft == 0) {
+  if (firesLeft == 0) { //add battery low
     return true;
   } else {
     return false;
@@ -108,14 +108,18 @@ bool avoid_output_flag() {
 
 void halt_command() {
   motors.desiredControl(0,0,0);
-  motors.powerMotors();
+  //flash a LED to be cool
 }
 
 void extinguish_command(){
+
+  //entering timestamp
   motors.controlFan(true);
-  delay(10000);
+  //stoped moving
+  
+  /*if some millis stuff && intensity 
   motors.controlFan(false); //turn fan off after 10 seconds
-  firesLeft--;
+  firesLeft--;*/
 }
 
 void Suppressor() {

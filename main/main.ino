@@ -14,29 +14,41 @@
 
 //----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
 // include libraries
-#include "libraries\Controllers\Controllers.h"
+/*#include "libraries\Controllers\Controllers.h"
 #include "libraries\Controllers\Controllers.cpp"
 #include "libraries\Sensors\Sensors.h"
-#include "libraries\Sensors\Sensors.cpp"
+#include "libraries\Sensors\Sensors.cpp"*/
 #include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
 
 //Initializing global objects
-Controllers controlSystem;
-Sensors sensor;
+//Controllers controlSystem;
+//Sensors sensor;
 Motors motor;
 
 //To be replaced by proper readings variables
 int obstacleFrontDistance;
 int photoReadings;
 int firesLeft = 2;
+int firesRecorded = 0;
+int maxPhotoDetected = 0;
+
+int i = 0; //first time entering extinguish state
+int updateFanMillis = 0;
+
+
+
 
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
 HardwareSerial *SerialCom;
 //----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
-#define FIREDISTANCE
+#define FIREDISTANCE 50
+#define FIRELOCATEVALUE 0 //photosensor value for fire to count as located
+#define DETECTION_THR 0 // threshold range for redetection of fire during relocation
+#define FANRUNTIME 10000 // 10s
+#define LIGHTOFF 0
 
 // Enum for motion states
 enum MOTION {
@@ -52,38 +64,45 @@ enum MOTION {
   STOP,
 };
 
+enum LOCATE {
+  SCAN,
+  RECORD,
+  REPOSITION
+};
+
+static LOCATE locate_state = SCAN; //place in main loop?
 
 // Declare commands and command flags
-MOTION halt_command;
+/*
+//MOTION halt_command;
 int halt_output_flag;
-MOTION extinguish_command;
+//MOTION extinguish_command;
 int extinguish_output_flag;
-MOTION avoid_command;
+//MOTION avoid_command;
 int avoid_output_flag;
-MOTION moveToFire_command;
+//MOTION moveToFire_command;
 int moveToFire_output_flag;
-MOTION locate_command;
+//MOTION locate_command;
 int locate_output_flag;
 
-MOTION motor_input;
+MOTION motor_input;*/
 
 //----------------------Main loop------------------------------------------------------------------------------------------------------------------------------------------
+void setup() {
+}
 
-void main () {
+//void main() {
+void loop() { 
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
-
   // update functions need to be inplemented
-  sensor.updateDistances();
-  sensor.updatePhotos();
+  //sensor.updateDistances();
+  //sensor.updatePhotos();
   Suppressor();
   motor.powerMotors();
 }
 
 //----------------------Sensing functions------------------------------------------------------------------------------------------------------------------------------------------
-bool locate_output_flag() {
-
-}
 bool extinguish_output_flag() {
   if (obstacleFrontDistance < FIREDISTANCE){
     return true;
@@ -91,6 +110,7 @@ bool extinguish_output_flag() {
     return false;
   }
 }
+
 bool moveToFire_output_flag() {
 
 }
@@ -106,20 +126,91 @@ bool avoid_output_flag() {
 }
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
+void locate_command() {
+  int firesRecorded = 0;
+  
+  //next state FSM
+  //when to exit a state and which state to transition to
+  switch (locate_state)
+  {
+    case SCAN:
+      if (photoReadings > FIRELOCATEVALUE) locate_state = RECORD;
+      break;
+    case RECORD:
+      if (firesLeft == firesRecorded) {
+        locate_state = REPOSITION;
+      } else if (firesRecorded < firesLeft && photoReadings < FIRELOCATEVALUE) {
+        locate_state = SCAN;
+      }
+      break;
+    case REPOSITION:
+      break; //?
+  }
+
+  //doing stuff
+  switch(locate_state) {
+    case SCAN:
+      scan();
+      break;
+    case RECORD:
+      record();
+      break;
+    case REPOSITION:
+      reposition();
+      break;
+  }
+}
+
+void scan() {
+  //rotate CW
+  motor.desiredControl(0,0,90);
+  //read photo sensors here?
+}
+
+void record() {
+  firesRecorded++;
+  maxPhotoDetected = photoReadings;//to replace wiht sensor function
+}
+
+void reposition() {
+    if (photoReadings > maxPhotoDetected - DETECTION_THR){
+       motor.desiredControl(0,0,0);
+    } else {
+      motor.desiredControl(0,0,90); 
+    }
+}
+
 void halt_command() {
-  motors.desiredControl(0,0,0);
+  motor.desiredControl(0,0,0);
   //flash a LED to be cool
 }
 
 void extinguish_command(){
 
-  //entering timestamp
-  motors.controlFan(true);
-  //stoped moving
+  //entering timestamp turn fan on and stop moving
+  if (i == 0) {
+    motor.desiredControl(0,0,0);
+    motor.controlFan(true);
+    
+    updateFanMillis = 0;
+    i++;
+  }
+
+  if ((millis() - updateFanMillis > FANRUNTIME) && (photoReadings > LIGHTOFF)){
+    motor.controlFan(false);
+    firesLeft--;
+    updateFanMillis = millis();
+    i=0;
+    
+  } 
+}
+
+void avoid_command() {
   
-  /*if some millis stuff && intensity 
-  motors.controlFan(false); //turn fan off after 10 seconds
-  firesLeft--;*/
+}
+
+void moveToFire_command() {
+
 }
 
 void Suppressor() {
@@ -139,11 +230,13 @@ void Suppressor() {
   } else { // default behaviour/lowest priority
     locate_command();
   }
-  sleep(tick);
+
+  motor.powerMotors();
+  //sleep(tick);
 }
 
 //----------------------- case study code ---------------------------------------------------------
-
+/*
 void avoid() {
   intval;
   val = ir_detect();
@@ -208,3 +301,4 @@ void moveToFire() {
     sleep(0.2);
   } else  moveToFire_output_flag = 0
   }
+  */

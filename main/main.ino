@@ -32,6 +32,8 @@ int photoReadings;
 int firesLeft = 2;
 int firesRecorded = 0;
 int maxPhotoDetected = 0;
+int totalTurn = 0; //amount turned during scan phase of locate
+int timeSearched; // time taken to move and serach of fire if nothing is seen for a full rotation
 
 int i = 0; //first time entering extinguish state
 int updateFanMillis = 0;
@@ -66,6 +68,7 @@ enum MOTION {
 
 enum LOCATE {
   SCAN,
+  SEARCH,
   RECORD,
   REPOSITION
 };
@@ -135,8 +138,18 @@ void locate_command() {
   {
     case SCAN:
       if (photoReadings > FIRELOCATEVALUE) locate_state = RECORD;
+      else if (totalTurn > 360) {
+        locate_state = SEARCH;
+        timeSearched = millis();
+      }
       break;
+    case SEARCH:
+      if (millis() - timeSearched > 3000) {
+        timeSearched = millis();
+        locate_state = SCAN;
+      } else locate_state = SEARCH;
     case RECORD:
+      totalTurn = 0; //reset search turned angle
       if (firesLeft == firesRecorded) {
         locate_state = REPOSITION;
       } else if (firesRecorded < firesLeft && photoReadings < FIRELOCATEVALUE) {
@@ -152,6 +165,9 @@ void locate_command() {
     case SCAN:
       scan();
       break;
+    case SEARCH:
+      search();
+      break;
     case RECORD:
       record();
       break;
@@ -165,6 +181,11 @@ void scan() {
   //rotate CW
   motor.desiredControl(0,0,90);
   //read photo sensors here?
+}
+
+void search() {
+  //move forward
+  motor.desiredControl(500,0,0);
 }
 
 void record() {

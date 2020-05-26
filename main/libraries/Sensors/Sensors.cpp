@@ -156,14 +156,67 @@ return  Reading;
 
 void Sensors::updatePhotos(){  
 	uint16_t Reading=0;
+	NumFiresDetected = 0;
 
 	for(int i=0;i<4;i++){
 	//read sensors
 	Reading=readPhoto(photoPins[i]);
 	//Comparing to deotection threshold
-	if(Reading>PHOTO_DETECT_THRESHOLD){FireDetected[i]=true;}
-	else{FireDetected[i]=false;}
+	if(Reading>PHOTO_DETECT_THRESHOLD){
+		FireDetected[i]=true;
+		NumFiresDetected++;
+	} else{FireDetected[i]=false;}
 	//filter readings are store
 	  this->Photos[i]= PhotoFilters[i]->filter(Reading,0);
 	}
+}
+
+void Sensors::updateArcAngle() {
+	//angle 0s at centre, and is negative CCW, and positive CW;
+	int i;
+	updatePhotos();
+	
+	if (NumFiresDetected == 2) {
+		//if fire detected pattern is [1 X 1 X], [1 X X 1] or [X 1 X 1] , go towards max 
+		//photo readings as more than one fire is likely detected
+		if (FireDetected[0] == 1){
+			if (FireDetected [2] == 1 || FireDetected[3] == 1) { 
+				estArcAngle = (45*FindMaxPhotoIndex() + 22.5)-90;
+		} else if (FireDetected[1] == 1 && FireDetected[3] == 1)
+				estArcAngle = (45*FindMaxPhotoIndex() + 22.5)-90;
+		} 
+		//if more than 2 fires, more than 1 fire likely to exist, head towards max
+	} else if (NumFiresDetected > 2) {
+			estArcAngle = (45*FindMaxPhotoIndex() + 22.5)-90;
+	} else {
+		// normal calculation of weighted average to determine the estimated angle of fire away
+		uint16_t total = 0;
+		uint16_t position = 0;
+
+		for (i=0; i<4; i++) {
+			total = total+ Photos[i];
+			position = position + (45*(i-1)+22.5)*Photos[i];
+		}
+
+		estArcAngle = position/total - 90; //centre 0 degree at centre
+	}
+		
+}
+
+
+// Finds the index of the max value in array Photos, which stores the 
+// photo levels detected by each of the photo transistors
+uint8_t Sensors::FindMaxPhotoIndex(){
+	uint8_t location = 0;
+	uint16_t val = 0;
+	int i;
+	
+	 for (i=0; i<4; i++) {
+        if (Photos[i] > val) {
+            val = Photos[i];
+            location = i;
+		}
+	}	
+	
+	return location;
 }

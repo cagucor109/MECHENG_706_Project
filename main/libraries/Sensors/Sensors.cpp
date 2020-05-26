@@ -173,6 +173,7 @@ void Sensors::updatePhotos(){
 
 void Sensors::updateArcAngle() {
 	//angle 0s at centre, and is negative CCW, and positive CW;
+	//angles are in degrees
 	int i;
 	updatePhotos();
 	

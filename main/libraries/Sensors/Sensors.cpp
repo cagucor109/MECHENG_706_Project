@@ -54,6 +54,9 @@ for (int i = 0; i<4; i++){
 	bool Sensors::getGyroState(){
 		return gyroState;
 	}
+	int Sensors::getPhotoArcAngle(){
+		return estArcAngle;
+	}
 	
 float Sensors::getZoneScore(const char *zone){
 	if(zone == "front"){return FrontScore;}

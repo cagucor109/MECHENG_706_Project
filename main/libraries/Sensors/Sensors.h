@@ -37,6 +37,7 @@ public:
 	//Distance and photo posistion IDs are left most facing to right most facing. 0-4 for distance and 0-3 for position.
 	uint16_t getDistance(byte POSITION_ID);
 	uint16_t getPhoto(byte POSITION_ID);
+	int getPhotoArcAngle();
 	bool getDetected(byte POSITION_ID);
 	float getZoneScore(const char *zone); //'left','front','center'
 	
@@ -55,14 +56,8 @@ public:
 	void updateAngle();
 	void updateDistances();
 	void updatePhotos();
+
 	void updateArcAngle();
-	
-	
-
-
-
-
-
 	void checkZones();
 
 private: 

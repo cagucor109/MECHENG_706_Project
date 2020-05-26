@@ -16,8 +16,8 @@
 // include libraries
 /*#include "libraries\Controllers\Controllers.h"
 #include "libraries\Controllers\Controllers.cpp"
-#include "libraries\Sensors\Sensors.h"
-#include "libraries\Sensors\Sensors.cpp"*/
+*/#include "libraries\Sensors\Sensors.h"
+#include "libraries\Sensors\Sensors.cpp"
 #include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
 

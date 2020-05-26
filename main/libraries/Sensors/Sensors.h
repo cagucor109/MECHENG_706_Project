@@ -55,6 +55,9 @@ public:
 	void updateAngle();
 	void updateDistances();
 	void updatePhotos();
+	void updateArcAngle();
+	
+	
 
 
 
@@ -67,6 +70,7 @@ private:
 	uint16_t Distances[5]; 
 	uint16_t Photos[4]; 
 	bool FireDetected[4];
+	int NumFiresDetected;
 	float Angle; // angle positive if rotated clockwise
 	
 	float LeftScore;
@@ -85,6 +89,8 @@ private:
 	
 	//Phototransistors
 	const byte photoPins[4]={PHOTO_LEFT_SIDE,PHOTO_LEFT_CENTER,PHOTO_RIGHT_CENTER,PHOTO_RIGHT_SIDE};
+	int estArcAngle;
+	uint8_t FindMaxPhotoIndex();
 	
 	//Filters
 	Kalman *DistanceFilters[5];

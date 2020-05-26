@@ -55,7 +55,11 @@ for (int i = 0; i<4; i++){
 		return gyroState;
 	}
 	
-
+float Sensors::getZoneScore(const char *zone){
+	if(zone == "front"){return FrontScore;}
+	if(zone == "left"){return LeftScore;}
+	if(zone == "right"){return RightScore;}
+}
 
 // utilities
 
@@ -141,7 +145,41 @@ void Sensors::updateDistances(){
 
 }
 
+void Sensors::checkZones(){
+	updateDistances();
+	//left zone normalised between zero and 400mm
+	float adjacent_distance_a=Distances[0]*sin(1.23918);//angle of sensor in radians(71 degrees)
+	//if forward facing sensor is reading inside the zone distance use that sensor.
+	float adjacent_distance_b;
+	if(Distances[1]<360){adjacent_distance_b=Distances[1]*sin(0.802851);}//angle of sensor in radians(46 degrees)
+	else{adjacent_distance_b=400;}
+	
+	float score=min(adjacent_distance_a,adjacent_distance_b);//closest object
+	score=score/400;
+	score=score-1;
+	LeftScore=score;		
 
+	
+	
+	//right zone
+	adjacent_distance_a=Distances[4]*sin(1.23918);//angle of sensor in radians(71 degrees)
+	//if forward facing sensor is reading inside the zone distance use that sensor.
+	if(Distances[3]<360){adjacent_distance_b=Distances[3]*sin(0.802851);}//angle of sensor in radians(46 degrees)
+	else{adjacent_distance_b=400;}
+	
+	score=min(adjacent_distance_a,adjacent_distance_b);//closest object
+	score=score/400;
+	score=score-1;
+	RightScore=score;
+	
+	
+	
+	//front zone
+	score=constrain(Distances[2],20,620);//2 is the min distance of the sensor
+	score=(score-20)/60;//offseting and dividing by the range to normalize between 0 and 1
+	score=1-score; //inverting so that 1 is close and 0 is far
+	FrontScore=score;
+}
 //----------------------Phototransistors----------------------
 
 

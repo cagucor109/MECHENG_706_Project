@@ -38,6 +38,7 @@ public:
 	uint16_t getDistance(byte POSITION_ID);
 	uint16_t getPhoto(byte POSITION_ID);
 	bool getDetected(byte POSITION_ID);
+	float getZoneScore(const char *zone); //'left','front','center'
 	
 	float getAngle();
 	bool getGyroState();
@@ -56,13 +57,21 @@ public:
 	void updatePhotos();
 
 
+
+
+
+	void checkZones();
+
 private: 
 	//Robot Position variables
 	uint16_t Distances[5]; 
 	uint16_t Photos[4]; 
 	bool FireDetected[4];
 	float Angle; // angle positive if rotated clockwise
-
+	
+	float LeftScore;
+	float RightScore;
+	float FrontScore;
 	
 	//Sensor state variables
 	bool gyroState;

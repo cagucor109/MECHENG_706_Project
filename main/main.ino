@@ -34,8 +34,12 @@ int firesRecorded = 0;
 int maxPhotoDetected = 0;
 int totalTurn = 0; //amount turned during scan phase of locate
 int timeSearched; // time taken to move and serach of fire if nothing is seen for a full rotation
+// thigns to remove when combined with sensor
+bool fireDetected, arcAngle, photoInten, checkFront, BatteryLow = false;
 
-int i = 0; //first time entering extinguish state
+
+bool locateFinished = false;
+bool first = false; //first time entering extinguish state
 int updateFanMillis = 0;
 
 
@@ -115,18 +119,38 @@ bool extinguish_output_flag() {
 }
 
 bool moveToFire_output_flag() {
-
+  // some of this is for locate because 
+  if((locateFinished == true)&&(fireDetected == true)){ // add brackets and sensors.firedetected when ready
+    return true;
+   
+  } else {
+    if (fireDetected == false){
+      locateFinished = false;
+    }
+    return false; 
+  }
 }
 bool halt_output_flag() {
-  if (firesLeft == 0) { //add battery low
+  if ((firesLeft == 0) || (BatteryLow)) { //add battery low
     return true;
   } else {
     return false;
   }
 }
 bool avoid_output_flag() {
-
+  if (checkFront == true){ // add sensor.checkZone('front') < obstacleThreshold
+    if ((arcAngle == true) && (photoInten == true)){     // abs(sensor.getPhotoArcAngle()) < arcThreshold && sensor.getIntensity > intensityThreshold
+      if (obstacleFrontDistance < FIREDISTANCE) { // sensor.checkZone('front') <fireThreshold
+        return true;
+      }
+      return false;
+    }
+    return true;
+  }else {
+    return false;
+  }
 }
+
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
 void locate_command() {
@@ -157,7 +181,8 @@ void locate_command() {
       }
       break;
     case REPOSITION:
-      break; //?
+      if (locateFinished == true) locate_state = SCAN; 
+      break; //may need to reevaluate
   }
 
   //doing stuff
@@ -190,12 +215,14 @@ void search() {
 
 void record() {
   firesRecorded++;
-  maxPhotoDetected = photoReadings;//to replace wiht sensor function
+  maxPhotoDetected = photoReadings;//to replace with sensor function
 }
 
-void reposition() {
-    if (photoReadings > maxPhotoDetected - DETECTION_THR){
+void reposition() { 
+    if (photoReadings > (maxPhotoDetected - DETECTION_THR)){
        motor.desiredControl(0,0,0);
+       locateFinished = true;
+       
     } else {
       motor.desiredControl(0,0,90); 
     }
@@ -209,19 +236,19 @@ void halt_command() {
 void extinguish_command(){
 
   //entering timestamp turn fan on and stop moving
-  if (i == 0) {
+  if (first == false) {
     motor.desiredControl(0,0,0);
     motor.controlFan(true);
     
-    updateFanMillis = 0;
-    i++;
+    updateFanMillis = millis;
+    first = true;
   }
 
   if ((millis() - updateFanMillis > FANRUNTIME) && (photoReadings > LIGHTOFF)){
     motor.controlFan(false);
     firesLeft--;
     updateFanMillis = millis();
-    i=0;
+    first=false;
     
   } 
 }

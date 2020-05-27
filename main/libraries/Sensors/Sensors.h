@@ -22,6 +22,9 @@
 #define PHOTO_RIGHT_SIDE 67 //A13
 #define PHOTO_AMBIENT_READING 60
 #define PHOTO_DETECT_THRESHOLD 250
+#define PHOTO_VIEW_ANGLE 50
+#define PHOTO_CENTER_OFFSET 100
+#define PHOTO_HALF_VIEW_ANGLE PHOTO_VIEW_ANGLE/2 //This might be incorrect
 
 #include "Kalman\Kalman.h"
 #include "Kalman\Kalman.cpp"
@@ -37,8 +40,10 @@ public:
 	//Distance and photo posistion IDs are left most facing to right most facing. 0-4 for distance and 0-3 for position.
 	uint16_t getDistance(byte POSITION_ID);
 	uint16_t getPhoto(byte POSITION_ID);
+	uint16_t getMaxPhoto();
 	int getPhotoArcAngle();
 	bool getDetected(byte POSITION_ID);
+	bool isDetected();
 	float getZoneScore(const char *zone); //'left','front','center'
 	
 	float getAngle();
@@ -56,6 +61,7 @@ public:
 	void updateAngle();
 	void updateDistances();
 	void updatePhotos();
+	
 
 	void updateArcAngle();
 	void checkZones();

@@ -6,11 +6,19 @@ FuzzyMember::FuzzyMember(){
 
 }
 
-FuzzyMember::FuzzyMember(float a, float b, float c, float d){
+FuzzyMember::FuzzyMember(char name[8], float a, float b, float c, float d){
+    strcpy(_name, name);
     _a = a;
     _b = b;
     _c = c;
     _d = d;
+    _pertinence = 0.0;
+    _truthLevel = 0.0;
+}
+
+// Destructors
+FuzzyMember::~FuzzyMember(){
+
 }
 
 // Getters
@@ -35,6 +43,24 @@ float FuzzyMember::getPertinence(){
     return _pertinence;
 }
 
+float FuzzyMember::getTruthLevel(){
+    return _truthLevel;
+}
+
+char* FuzzyMember::getName(){
+    return _name;
+}
+
+// Setters
+bool FuzzyMember::setTruthLevel(float truthLevel){
+
+    // only assign value if it is higher than current assigned value
+    if(truthLevel > _truthLevel){
+        _truthLevel = truthLevel;
+    }
+}
+
+
 // Public Methods
 
 // the points represent the location on the x axis. 
@@ -55,19 +81,19 @@ bool FuzzyMember::calculatePertinence(float inputValue){
 
     // check if input is between vertex A and B
     // note: slope always positive
-    else if(inputValue > _a && inputValue < _b){
+    else if(inputValue >= _a && inputValue <= _b){
         float slope = 1.0/(_b - _a);
         _pertinence = slope * (inputValue - _a);
     }
 
     // check if input is between vertex B and C
-    else if(inputValue > _b && inputValue < _c){
+    else if(inputValue >= _b && inputValue <= _c){
         _pertinence = 1.0;
     }
 
     // check if input is between vertex C and D
     // note: slope always negative
-    else if(inputValue > _c && inputValue < _d){
+    else if(inputValue >= _c && inputValue <= _d){
         float slope = 1.0/(_d - _c);
         _pertinence = slope * (inputValue - _c) + 1.0;
     }
@@ -83,14 +109,6 @@ bool FuzzyMember::calculatePertinence(float inputValue){
     } 
 
     return true;
-}
-
-void FuzzyMember::setBestPertinence(float pertinence){
-    // check if the new pertinence is bigger then the current value because it can be called more then once by different FuzzyRuleConsequent
-    if (_pertinence < pertinence)
-    {
-        _pertinence = pertinence;
-    }
 }
 
 void FuzzyMember::resetPertinence(){

@@ -3,6 +3,7 @@
 
 #include "FuzzyMember.h"
 #include <vector>
+#include <stdlib.h>
 
 class FuzzyIO{
     public:
@@ -12,12 +13,17 @@ class FuzzyIO{
     // Destructors
     ~FuzzyIO();
 
+    // Getters
+    char* listMembers();
+
     // Public Methods
     bool addMember(FuzzyMember *newMember);
+    
 
 protected:
-    std::vector<FuzzyMember*> fuzzyMembers;
-}
+    std::vector<FuzzyMember*> _fuzzyMembers;
+    char names[32];
+};
 
 class FuzzyI : public FuzzyIO{
 public:
@@ -27,11 +33,22 @@ public:
     // Destructors
     ~FuzzyI();
 
+    // Getters
+    float getInputVal();
+    float getPertinence(int index);
+
+    // Setters
+    void setInputVal(float inputValue);
+
     // Public Methods
+    bool calculateAllPertinences();
 
-}
+private:
+    float _inputValue; // value to calculate 
 
-class FuzzyO{
+};
+
+class FuzzyO : public FuzzyIO{
 public:
     // Constructors
     FuzzyO();
@@ -41,6 +58,6 @@ public:
 
     // Public Methods
 
-}
+};
 
 #endif

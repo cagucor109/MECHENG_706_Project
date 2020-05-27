@@ -1,11 +1,13 @@
 #ifndef FUZZYMEMBER_H
 #define FUZZYMEMBER_H
 
+#include <cstring>
+
 class FuzzyMember{
 public:
     // Constructors
     FuzzyMember();
-    FuzzyMember(float a, float b, float c, float d); // set the points for the set
+    FuzzyMember(char* name, float a, float b, float c, float d); // set the points for the set
 
     // Destructors
     ~FuzzyMember();
@@ -16,16 +18,21 @@ public:
     float getVertexC();
     float getVertexD();
     float getPertinence();
+    float getTruthLevel();
+    char* getName();
+
+    // Setters
+    bool setTruthLevel(float truthLevel);
 
     // Public Methods
     bool calculatePertinence(float inputValue);
-    void setBestPertinence(float pertinence);
     void resetPertinence();
 
 private:
     float _a, _b, _c, _d; // Vertices of membership function
-    float _pertinence;
-    char name[8];
+    float _pertinence; // for input fuzzy members
+    float _truthLevel; // for output fuzzy members
+    char _name[8];
 };
 
 #endif

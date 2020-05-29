@@ -29,5 +29,10 @@ int main(){
     std::cout << (*fuzzy).getPertinence(1) << std::endl;
     std::cout << (*fuzzy).getPertinence(2) << std::endl;
 
+    std::cout << "test find name..." << std::endl;
+
+    strcpy(name, "c");
+    std::cout << (*fuzzy).findNamedMember(name) << std::endl;
+
     return 0;
 }

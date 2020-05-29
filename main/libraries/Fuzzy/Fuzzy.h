@@ -8,30 +8,29 @@
 class Fuzzy{
 public:
     // Constructors
-    Fuzzy();
+    Fuzzy(); // default
+    Fuzzy(int preDef); // specific to the rule set defined
 
     // Destructors
     ~Fuzzy();
 
     // Public Methods
-    bool addInput(); // adds a type of input 
-    bool addOutput(); // adds a type of output 
-    bool addRule(); // adds a rule 
+    bool addRuleSet(FuzzyRules* ruleSet);  
+    bool addFuzzyInput(FuzzyI* input);
+    bool addFuzzyOutput(FuzzyO* output);
 
-    bool setInput(); // set a value for each type of input
+    bool setCrispInput(char* inputName, float crispInput); // set an input value to specific fuzzy input
     bool fuzzyify(); // perform fuzzification
-    bool checkRules(); // see which rules are triggered
-    bool defuzzify(float &x, float &y, float &w); // defuzzify output (weighted average)
+    bool applyRules(); // evaluate all the rules
+    bool defuzzify(); // defuzzify output (centroid)
 
 private:
-    FuzzyI *fuzzyInputs;    // Set of fuzzy inputs
-    FuzzyO *fuzzyOutputs;   // Set of fuzzy outputs
-    FuzzyRules *fuzzyRules; // Set of fuzzy rules
+    FuzzyRules *_fuzzyRules; // Set of fuzzy rules
+    std::vector<FuzzyI*> _fuzzyInputs;
+    std::vector<FuzzyO*> _fuzzyOutputs;
 
     // Private Destructors
-    void clearFuzzyInputs();
-    void clearFuzzyOutputs();s
     void clearFuzzyRules();
-}
+};
 
 #endif

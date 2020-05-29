@@ -57,7 +57,10 @@ bool FuzzyMember::setTruthLevel(float truthLevel){
     // only assign value if it is higher than current assigned value
     if(truthLevel > _truthLevel){
         _truthLevel = truthLevel;
+        return true;
     }
+
+    return false;
 }
 
 

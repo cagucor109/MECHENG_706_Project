@@ -9,22 +9,17 @@ class FuzzyRules{
 public:
     // Constructors
     FuzzyRules(); // default constructor
-    FuzzyRules(Antecedent *fuzzyAntecedent, Consequent *fuzzyConsequent); // antecendent and consequent constructor
-
+    
     // Destructors
     ~FuzzyRules();
 
-    // Getters
-    bool isRuleMet(); // return if the rule applies
-
     // Public Methods
-    bool evaluateRule(); // check if the rule applies
+    bool addRule(Antecedent* antecedent, Consequent* consequent);
+    bool evaluateRules(); // assign outputs based on inputs
 
 private:
-    Antecedent *_fuzzyAntecedent;
-    Consequent *_fuzzyConsequent;
-    bool _ruleMet; // true if the antecendents match the input
-
+    std::vector<Antecedent*> _fuzzyAntecedents;
+    std::vector<Consequent*> _fuzzyConsequents;
 };
 
 class Antecedent{
@@ -36,14 +31,12 @@ public:
     ~Antecedent();
 
     // Public Methods
-    bool makeAntecedent(); // make antecendent based on array of conditions and operations
-    bool evaluateAntecedent(); // check if the antecedent returns true
+    bool addAntecedent(FuzzyI* input, FuzzyMember* member); // add an antecedent to the list
+    float evaluateAntecedent(); // check the truth level of the antecendent, a 2.0 represents no antecendents set
 
 private:
-    std::vector<FuzzyMember*> antecedentMember; // fuzzy member
-    std::vector<FuzzyI*> antecedentInput; // fuzzy input
-    std::vector<int> relations; // is or is not
-    std::vector<int> operators; // and/ or 
+    std::vector<FuzzyMember*> _antecedentMembers; // fuzzy member
+    std::vector<FuzzyI*> _antecedentInputs; // fuzzy input
 };
 
 class Consequent{
@@ -55,11 +48,12 @@ public:
     ~Consequent();
 
     // Public Methods
-    bool makeConsequent(); // make consequent
+    bool makeConsequent(FuzzyO* output, FuzzyMember* member); // make consequent
+    bool evaluateConsequent(float antecedentTruth);
     
 private:
-    FuzzyMember *consequentMember; // fuzzy member
-    FuzzyO *consequentOutput; 
+    FuzzyMember *_consequentMember; // fuzzy member
+    FuzzyO *_consequentOutput; 
 };
 
 #endif

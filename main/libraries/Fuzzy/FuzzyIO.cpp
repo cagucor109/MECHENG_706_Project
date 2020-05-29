@@ -7,6 +7,10 @@ FuzzyIO::FuzzyIO(){
 
 }
 
+FuzzyIO::FuzzyIO(char* name){
+    strcpy(_name, name);
+}
+
 // Destructors
 FuzzyIO::~FuzzyIO(){
 
@@ -19,14 +23,32 @@ FuzzyIO::~FuzzyIO(){
 // Getters
 char* FuzzyIO::listMembers(){
 
-    strcpy(names, "");
+    strcpy(_names, "");
 
     for(int i = 0; i < _fuzzyMembers.size(); i++){
-        strcat(names, (*_fuzzyMembers.at(i)).getName());
-        strcat(names, "\n");
+        strcat(_names, (*_fuzzyMembers.at(i)).getName());
+        strcat(_names, "\n");
     }
 
-    return names;
+    return _names;
+}
+
+char* FuzzyIO::getName(){
+    return _name;
+}
+
+int FuzzyIO::findNamedMember(char* name){
+    for(int i = 0; i < _fuzzyMembers.size(); i++){
+        if( !strcmp((*_fuzzyMembers.at(i)).getName(), name) ){
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+FuzzyMember* FuzzyIO::getFuzzyMember(int index){
+    return _fuzzyMembers.at(index);
 }
 
 
@@ -42,6 +64,10 @@ bool FuzzyIO::addMember(FuzzyMember *newMember){
 
 // Constructors
 FuzzyI::FuzzyI() : FuzzyIO(){
+
+}
+
+FuzzyI::FuzzyI(char* name) : FuzzyIO(name){
 
 }
 
@@ -72,4 +98,25 @@ bool FuzzyI::calculateAllPertinences(){
     }
 
     return true;
+}
+
+// ---------------------- FuzzyO --------------------- //
+
+// Constructors
+FuzzyO::FuzzyO(){
+
+}
+
+FuzzyO::FuzzyO(char* name) : FuzzyIO(name){
+
+}
+
+// Destructors
+FuzzyO::~FuzzyO(){
+
+}
+
+// Public Methods
+bool FuzzyO::calculateOutput(){
+    
 }

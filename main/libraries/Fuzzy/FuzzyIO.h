@@ -9,12 +9,16 @@ class FuzzyIO{
     public:
     // Constructors
     FuzzyIO();
+    FuzzyIO(char* name);
 
     // Destructors
     ~FuzzyIO();
 
     // Getters
     char* listMembers();
+    char* getName();
+    int findNamedMember(char* name); // return index of named fuzzy member, -1 if not found
+    FuzzyMember* getFuzzyMember(int index); // return member at specified index, use with findNamedMember
 
     // Public Methods
     bool addMember(FuzzyMember *newMember);
@@ -22,13 +26,15 @@ class FuzzyIO{
 
 protected:
     std::vector<FuzzyMember*> _fuzzyMembers;
-    char names[32];
+    char _name[8];
+    char _names[32];
 };
 
 class FuzzyI : public FuzzyIO{
 public:
     // Constructors
     FuzzyI();
+    FuzzyI(char* name);
 
     // Destructors
     ~FuzzyI();
@@ -52,12 +58,16 @@ class FuzzyO : public FuzzyIO{
 public:
     // Constructors
     FuzzyO();
+    FuzzyO(char* name);
 
     // Destructors
     ~FuzzyO();
 
     // Public Methods
+    bool calculateOutput(); // centroid method
 
+private:
+    float _outputValue; // final output
 };
 
 #endif

@@ -13,6 +13,9 @@ public:
 
     // Destructors
     ~Fuzzy();
+    
+    // Getters
+    float getOuputValue(char* outputName);
 
     // Public Methods
     bool addRuleSet(FuzzyRules* ruleSet);  
@@ -20,14 +23,18 @@ public:
     bool addFuzzyOutput(FuzzyO* output);
 
     bool setCrispInput(char* inputName, float crispInput); // set an input value to specific fuzzy input
-    bool fuzzyify(); // perform fuzzification
-    bool applyRules(); // evaluate all the rules
-    bool defuzzify(); // defuzzify output (centroid)
+    bool updateFuzzy();
+    
 
 private:
     FuzzyRules *_fuzzyRules; // Set of fuzzy rules
     std::vector<FuzzyI*> _fuzzyInputs;
     std::vector<FuzzyO*> _fuzzyOutputs;
+    
+    // Private methods
+    bool fuzzyify(); // perform fuzzification
+    bool applyRules(); // evaluate all the rules
+    bool defuzzify(); // defuzzify output (centroid)
 
     // Private Destructors
     void clearFuzzyRules();

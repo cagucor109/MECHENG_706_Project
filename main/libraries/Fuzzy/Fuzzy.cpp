@@ -6,7 +6,12 @@ Fuzzy::Fuzzy(){
 }
 
 Fuzzy::Fuzzy(int preDef){
-
+if (preDef == 1){ //moveToFire fuzzy controller
+	
+} else if (preDef == 2){ // Avoidance fuzzy controller
+	
+} else{
+}
 }
 
 // Destructors

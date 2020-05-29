@@ -41,10 +41,18 @@ for (int i = 0; i<4; i++){
 		if(POSITION_ID>=4){return 65535;}
 		else{return this->Photos[POSITION_ID];}
 	}
+
+	uint16_t Sensors::getMaxPhoto(){
+		return this->Photos[FindMaxPhotoIndex()];
+	}
 	
 	bool Sensors::getDetected(byte POSITION_ID){
 	if(POSITION_ID>=4){return false;}
 	else{return this->FireDetected[POSITION_ID];}
+	}
+
+	bool Sensors::isDetected(){
+		return FireDetected[0]|| FireDetected[1] ||FireDetected[2]|| FireDetected[3];
 	}
 
 	float Sensors::getAngle(){
@@ -158,30 +166,21 @@ void Sensors::checkZones(){
 	else{adjacent_distance_b=400;}
 	
 	float score=min(adjacent_distance_a,adjacent_distance_b);//closest object
-	score=score/400;
-	score=score-1;
-	LeftScore=score;		
-
-	
-	
-	//right zone
+	LeftScore=score/400;
+			
+	//right zone normalised between zero and 400mm
 	adjacent_distance_a=Distances[4]*sin(1.23918);//angle of sensor in radians(71 degrees)
 	//if forward facing sensor is reading inside the zone distance use that sensor.
 	if(Distances[3]<360){adjacent_distance_b=Distances[3]*sin(0.802851);}//angle of sensor in radians(46 degrees)
 	else{adjacent_distance_b=400;}
 	
 	score=min(adjacent_distance_a,adjacent_distance_b);//closest object
-	score=score/400;
-	score=score-1;
-	RightScore=score;
-	
-	
-	
-	//front zone
+	RightScore=score/400;
+
+	//front zone normalised between zero and 600mm
 	score=constrain(Distances[2],20,620);//2 is the min distance of the sensor
-	score=(score-20)/60;//offseting and dividing by the range to normalize between 0 and 1
-	score=1-score; //inverting so that 1 is close and 0 is far
-	FrontScore=score;
+	FrontScore=(score-20)/600;//offseting and dividing by the range to normalize between 0 and 1
+
 }
 //----------------------Phototransistors----------------------
 
@@ -218,18 +217,18 @@ void Sensors::updateArcAngle() {
 	int i;
 	updatePhotos();
 	
-	if (NumFiresDetected == 2) {
+	if (NumFiresDetected == 2) { //Sensors have a viewing angle of 50 degrees and are evenly spaced through a 200 degree range giving a 100 degree offset for the center.
 		//if fire detected pattern is [1 X 1 X], [1 X X 1] or [X 1 X 1] , go towards max 
 		//photo readings as more than one fire is likely detected
 		if (FireDetected[0] == 1){
 			if (FireDetected [2] == 1 || FireDetected[3] == 1) { 
-				estArcAngle = (45*FindMaxPhotoIndex() + 22.5)-90;
+				estArcAngle = (PHOTO_VIEW_ANGLE*FindMaxPhotoIndex() + PHOTO_HALF_VIEW_ANGLE)-PHOTO_CENTER_OFFSET;
 		} else if (FireDetected[1] == 1 && FireDetected[3] == 1)
-				estArcAngle = (45*FindMaxPhotoIndex() + 22.5)-90;
+				estArcAngle = (PHOTO_VIEW_ANGLE*FindMaxPhotoIndex() + PHOTO_HALF_VIEW_ANGLE)-PHOTO_CENTER_OFFSET;
 		} 
 		//if more than 2 fires, more than 1 fire likely to exist, head towards max
 	} else if (NumFiresDetected > 2) {
-			estArcAngle = (45*FindMaxPhotoIndex() + 22.5)-90;
+			estArcAngle = (PHOTO_VIEW_ANGLE*FindMaxPhotoIndex() + PHOTO_HALF_VIEW_ANGLE)-PHOTO_CENTER_OFFSET;
 	} else {
 		// normal calculation of weighted average to determine the estimated angle of fire away
 		uint16_t total = 0;
@@ -237,10 +236,10 @@ void Sensors::updateArcAngle() {
 
 		for (i=0; i<4; i++) {
 			total = total+ Photos[i];
-			position = position + (45*(i-1)+22.5)*Photos[i];
+			position = position + (PHOTO_VIEW_ANGLE*(i-1)+PHOTO_HALF_VIEW_ANGLE)*Photos[i];
 		}
 
-		estArcAngle = position/total - 90; //centre 0 degree at centre
+		estArcAngle = position/total - PHOTO_CENTER_OFFSET; //centre 0 degree at centre
 	}
 		
 }

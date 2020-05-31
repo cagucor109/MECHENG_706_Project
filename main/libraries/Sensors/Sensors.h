@@ -1,7 +1,6 @@
 #ifndef SENSORS_H
 #define SENSORS_H
 
-
 #define IR_LEFT_SIDE_PIN 59 //A5
 #define IR_RIGHT_SIDE_PIN  58//A4
 #define IR_LEFT_FORWARD_PIN 63 //A9
@@ -33,56 +32,57 @@
 
 class Sensors {
 public:
-    // constructors
+// constructors
     Sensors();
 
-    // getters
+// getters
 	//Distance and photo posistion IDs are left most facing to right most facing. 0-4 for distance and 0-3 for position.
+	//Distance
 	uint16_t getDistance(byte POSITION_ID);
+	float getZoneScore(const char *zone); //'left','front','center'
+	//Photos
 	uint16_t getPhoto(byte POSITION_ID);
 	uint16_t getMaxPhoto();
 	int getPhotoArcAngle();
 	bool getDetected(byte POSITION_ID);
 	bool isDetected();
-	float getZoneScore(const char *zone); //'left','front','center'
-	
+	//Gyro
 	float getAngle();
 	bool getGyroState();
 
-
-    // utilities
-	uint16_t readIr(byte readPin, float Coefficents[],uint16_t Constraints[]); //
-	uint16_t readSonar();
-	uint16_t readPhoto(byte readPin);
-	
+// utilities
+    // Gryo
 	void enableGyro();
-	void disableGyro();
-		
+	void disableGyro();	
 	void updateAngle();
-	void updateDistances();
-	void updatePhotos();
 	
-
+	//Distance and light
 	void updateArcAngle();
 	void checkZones();
 
 private: 
-	//Robot Position variables
-	uint16_t Distances[5]; 
-	uint16_t Photos[4]; 
-	bool FireDetected[4];
-	int NumFiresDetected;
-	float Angle; // angle positive if rotated clockwise
+// utilities
+	//Sensor reading
+	uint16_t readIr(byte readPin, float Coefficents[],uint16_t Constraints[]); //
+	uint16_t readSonar();
+	uint16_t readPhoto(byte readPin);
+	//
+	void updateDistances();
+	void updatePhotos();
+
+
+//Sensors variables
 	
+	//Gryo
+	bool gyroState;
+	float Angle; // angle positive if rotated clockwise
+
+	//Distance
+	uint16_t Distances[5]; 
 	float LeftScore;
 	float RightScore;
 	float FrontScore;
-	
-	//Sensor state variables
-	bool gyroState;
-	
 	//IR calibration coefficent and calibration range limits
-
 	//calibration curves and constraints ordered based on position ID, position 2 is left blank because it is the sonar
 	const byte irPins[5]={IR_LEFT_SIDE_PIN,IR_LEFT_FORWARD_PIN,0,IR_RIGHT_FORWARD_PIN,IR_RIGHT_SIDE_PIN};
 	const float irCalibrations[5][3]={{-0.0002,0.1007,-7.5392},{0,0.0232,-0.7972},{0,0,0},{0,0.0127,0.0566},{-0.0002,0.1025,-7.9823}};
@@ -90,6 +90,9 @@ private:
 	
 	//Phototransistors
 	const byte photoPins[4]={PHOTO_LEFT_SIDE,PHOTO_LEFT_CENTER,PHOTO_RIGHT_CENTER,PHOTO_RIGHT_SIDE};
+	uint16_t Photos[4]; 
+	bool FireDetected[4];
+	int NumFiresDetected;
 	int estArcAngle;
 	uint8_t FindMaxPhotoIndex();
 	

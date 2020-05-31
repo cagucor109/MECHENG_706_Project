@@ -1,6 +1,6 @@
 #include "Sensors.h"
 
-// constructors
+//-----------------------constructors--------------------------------
 Sensors::Sensors(){
 	//Setting pinModes 
 pinMode(IR_LEFT_SIDE_PIN, INPUT);
@@ -30,7 +30,7 @@ for (int i = 0; i<4; i++){
 }
 
 
-// getters
+//-----------------------getters--------------------------------
 
 	uint16_t Sensors::getDistance(byte POSITION_ID){
 		if(POSITION_ID>=5){return 65535;}

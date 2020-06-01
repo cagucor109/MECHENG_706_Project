@@ -44,6 +44,7 @@ public:
 	uint16_t getPhoto(byte POSITION_ID);
 	uint16_t getMaxPhoto();
 	int getPhotoArcAngle();
+	float getNormPhotoArc();
 	bool getDetected(byte POSITION_ID);
 	bool isDetected();
 	//Gyro

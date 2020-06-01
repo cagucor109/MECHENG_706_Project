@@ -118,11 +118,10 @@ FuzzyO::~FuzzyO(){
 
 // Public Methods
 bool FuzzyO::calculateOutput(){
-    // TODO: Generate points
-    // generatepoints();
+    
+    generatePoints();
 
-    // TODO: Process points
-    // processPoints();
+    processPoints();
 
     // TODO: Calculate area under combined shape
     for(int i = 0; i < _xPointsFinal.size() - 1; i++){
@@ -170,8 +169,6 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back( truth );
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             linesIntersect(tempX, tempY, c, 1, d, 0, minX, truth, maxX, truth);
 
@@ -179,15 +176,11 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back(tempY);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             _xPointsRaw.push_back(d);
             _yPointsRaw.push_back(0);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
         }
 
         // if the function's right is all 1
@@ -196,8 +189,6 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back(0);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             linesIntersect(tempX, tempY, a, 0, b, 1, minX, truth, maxX, truth);
 
@@ -205,15 +196,11 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back(tempY);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             _xPointsRaw.push_back(maxX);
             _yPointsRaw.push_back(truth);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
         }
 
         // any other shape will result in trapeze
@@ -222,8 +209,6 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back(0);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             linesIntersect(tempX, tempY, a, 0, b, 1, minX, truth, maxX, truth);
 
@@ -231,8 +216,6 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back(tempY);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             linesIntersect(tempX, tempY, c, 1, d, 0, minX, truth, maxX, truth);
 
@@ -240,16 +223,15 @@ void FuzzyO::generatePoints(){
             _yPointsRaw.push_back(tempY);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
 
             _xPointsRaw.push_back(d);
             _yPointsRaw.push_back(0);
 
             _numLines++;
-            _xPointsRaw.push_back( SEPARATOR );
-            _yPointsRaw.push_back( SEPARATOR );
         }
+
+        _xPointsRaw.push_back( SEPARATOR );
+        _yPointsRaw.push_back( SEPARATOR );
     }
 }
 
@@ -317,8 +299,10 @@ void FuzzyO::processPoints(){
                             firstPointX = (grad1 > grad2) ? _xPointsFinal.at(j) : _xPointsRaw.at(i);
                             firstPointY = (grad1 > grad2) ? _yPointsFinal.at(j) : _yPointsRaw.at(i);
 
-                            secondPointX = (grad1 < grad2) ? _x
+                            secondPointX = (grad1 > grad2) ? _xPointsFinal.at(j+1) : _xPointsRaw.at(i+1);
+                            secondPointY = (grad1 > grad2) ? _yPointsFinal.at(j+1) : _yPointsRaw.at(i+1);
                         }
+                        // TODO: replace points j and j+1 with first and second points
                     }
                 }
 

@@ -3,6 +3,7 @@
 
 #include "FuzzyIO.h"
 #include "FuzzyMember.h"
+#include "Arduino.h"
 
 
 class FuzzyRules{

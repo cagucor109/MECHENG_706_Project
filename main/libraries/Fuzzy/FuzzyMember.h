@@ -1,6 +1,7 @@
 #ifndef FUZZYMEMBER_H
 #define FUZZYMEMBER_H
 
+#include "Arduino.h"
 #include <cstring>
 
 class FuzzyMember{

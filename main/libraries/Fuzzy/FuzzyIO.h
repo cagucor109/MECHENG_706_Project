@@ -2,6 +2,7 @@
 #define FUZZYIO_H
 
 #include "FuzzyMember.h"
+#include "Arduino.h"
 #include <vector>
 #include <algorithm>
 #include <stdlib.h>

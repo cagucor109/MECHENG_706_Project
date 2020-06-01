@@ -2,6 +2,7 @@
 #define FUZZY_H
 
 #include "FuzzyIO.h"
+#include "Arduino.h"
 #include "FuzzyMember.h"
 #include "FuzzyRules.h"
 

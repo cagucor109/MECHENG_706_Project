@@ -23,6 +23,14 @@ FuzzyMember::~FuzzyMember(){
 
 // Getters
 
+int FuzzyMember::getMaxX(){
+    return _max_X;
+}
+
+int FuzzyMember::getMinX(){
+    return _min_X;
+}
+
 float FuzzyMember::getVertexA(){
     return _a;
 }

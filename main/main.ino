@@ -14,9 +14,7 @@
 
 //----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
 // include libraries
-/*#include "libraries\Controllers\Controllers.h"
-#include "libraries\Controllers\Controllers.cpp"
-*/#include "libraries\Sensors\Sensors.h"
+#include "libraries\Sensors\Sensors.h"
 #include "libraries\Sensors\Sensors.cpp"
 #include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
@@ -39,7 +37,7 @@ bool locateFinished = false;
 bool first = false; //first time entering extinguish state
 int updateFanMillis = 0;
 int firesRecorded = 0;
- float firstFire = 0;
+float firstFire = 0;
 
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------

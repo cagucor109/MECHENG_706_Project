@@ -1,6 +1,6 @@
 #include "Sensors.h"
 
-// constructors
+//-----------------------constructors--------------------------------
 Sensors::Sensors(){
 	//Setting pinModes 
 pinMode(IR_LEFT_SIDE_PIN, INPUT);
@@ -30,7 +30,7 @@ for (int i = 0; i<4; i++){
 }
 
 
-// getters
+//-----------------------getters--------------------------------
 
 	uint16_t Sensors::getDistance(byte POSITION_ID){
 		if(POSITION_ID>=5){return 65535;}
@@ -65,12 +65,15 @@ for (int i = 0; i<4; i++){
 	int Sensors::getPhotoArcAngle(){
 		return estArcAngle;
 	}
+	float Sensors::getNormPhotoArc(){
+		return estArcNorm;
+	}
 	
-float Sensors::getZoneScore(const char *zone){
-	if(zone == "front"){return FrontScore;}
-	if(zone == "left"){return LeftScore;}
-	if(zone == "right"){return RightScore;}
-}
+	float Sensors::getZoneScore(const char *zone){
+		if(zone == "front"){return FrontScore;}
+		if(zone == "left"){return LeftScore;}
+		if(zone == "right"){return RightScore;}
+	}
 
 // utilities
 
@@ -239,7 +242,8 @@ void Sensors::updateArcAngle() {
 			position = position + (PHOTO_VIEW_ANGLE*(i-1)+PHOTO_HALF_VIEW_ANGLE)*Photos[i];
 		}
 
-		estArcAngle = position/total - PHOTO_CENTER_OFFSET; //centre 0 degree at centre
+		estArcAngle = (position/total) - PHOTO_CENTER_OFFSET; //centre 0 degree at centre
+		estArcNorm = estArcAngle/(PHOTO_VIEW_ANGLE*2); //normalise arc angle between -1 and 1, (as max angle diff is +/- 2*50deg)
 	}
 		
 }

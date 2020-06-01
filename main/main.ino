@@ -9,7 +9,7 @@
 // files in the libraries. The purpose of the program is to control a vex
 // robot to extinguish fires when placed in a walled area with unknown
 // obstacles and fire locations. Behaviour and fuzzy logic control are used
-// to implement this system.
+// with a overarching FSM system.
 
 
 //----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
@@ -20,12 +20,15 @@
 #include "libraries\Sensors\Sensors.cpp"
 #include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
-
+#include "libraries\Fuzzy\Fuzzy.h"
+#include "libraries\Fuzzy\Fuzzy.cpp"
 //Initializing global objects
 //Controllers controlSystem;
 //Sensors sensor;
 Motors motor;
 
+Fuzzy avoidFuzzy(1);
+Fuzzy moveToFireFuzzy(2);
 //To be replaced by proper readings variables
 int obstacleFrontDistance;
 int photoReadings;
@@ -103,8 +106,8 @@ void loop() {
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
   // update functions need to be inplemented
-  //sensor.updateDistances();
-  //sensor.updatePhotos();
+  sensor.updateArcAngle();  // this is for moveToFire
+  sensor.checkZones();      // this is for Avoid
   Suppressor();
   motor.powerMotors();
 }
@@ -119,7 +122,11 @@ bool extinguish_output_flag() {
 }
 
 bool moveToFire_output_flag() {
-  // some of this is for locate because 
+  // some of this is for locate because it doesnt have a flag function
+  // locatefinished is used to check that locate is finished before moving
+  // to moveToFire behaviour. It is set when we have finishe repositioning to
+  // the largest phototransistor reading and is also reset when moving to fire 
+  // for the next time we enter that state/behaviour.
   if((locateFinished == true)&&(fireDetected == true)){ // add brackets and sensors.firedetected when ready
     return true;
    
@@ -151,18 +158,25 @@ bool avoid_output_flag() {
   }
 }
 
+
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
 void locate_command() {
   int firesRecorded = 0;
-  
+  float firstFire = 0;
   //next state FSM
   //when to exit a state and which state to transition to
   switch (locate_state)
   {
     case SCAN:
-      if (photoReadings > FIRELOCATEVALUE) locate_state = RECORD;
-      else if (totalTurn > 360) {
+      if (sensor.getGyroState()){ // if gyro off turn on
+        sensor.enableGyro();
+      }
+      if (sensor.getPhoto(2) > FIRELOCATEVALUE){
+        firstFire = sensor.getAngle();
+        locate_state = RECORD;
+      }
+      else if (sensor.getAngle() > 360) {
         locate_state = SEARCH;
         timeSearched = millis();
       }
@@ -173,10 +187,9 @@ void locate_command() {
         locate_state = SCAN;
       } else locate_state = SEARCH;
     case RECORD:
-      totalTurn = 0; //reset search turned angle
       if (firesLeft == firesRecorded) {
         locate_state = REPOSITION;
-      } else if (firesRecorded < firesLeft && photoReadings < FIRELOCATEVALUE) {
+      } else if (firesRecorded < firesLeft && sensor.getPhoto(2) < FIRELOCATEVALUE) {
         locate_state = SCAN;
       }
       break;
@@ -206,6 +219,7 @@ void scan() {
   //rotate CW
   motor.desiredControl(0,0,90);
   //read photo sensors here?
+  
 }
 
 void search() {
@@ -214,8 +228,9 @@ void search() {
 }
 
 void record() {
+  // continues to turn until fire is no longer seen on the 
   firesRecorded++;
-  maxPhotoDetected = photoReadings;//to replace with sensor function
+  maxPhotoDetected = sensor.getPhoto(2);//to replace with sensor function
 }
 
 void reposition() { 
@@ -254,11 +269,32 @@ void extinguish_command(){
 }
 
 void avoid_command() {
-  
+  bool front, left, right;
+  double Xnorm, Ynorm = 0;
+  front = moveToFireFuzzy.setCrispInput('front', sensor.getZoneScore('front'));
+  left = moveToFireFuzzy.setCrispInput('left', sensor.getZoneScore('left'));
+  right = moveToFireFuzzy.setCrispInput('right', sensor.getZoneScore('right'));
+  if (front && left && right){
+    avoidFuzzy.updateFuzzy();
+    Xnorm = moveToFireFuzzy.getOutputValue('X');  // num between -1 - 1
+    Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between -1 - 1
+    // scale to motor range of +- 500 and input to motor
+    motor.desiredControl(Xnorm*500, Ynorm*500); 
+  }
 }
 
 void moveToFire_command() {
-
+  bool arcPosition, intensity;
+  double Ynorm, Znorm = 0;
+  arcPosition = moveToFireFuzzy.setCrispInput('arcPosition', sensor.getPhotoArcAngle());
+  intensity = moveToFireFuzzy.setCrispInput('intensity', sensor.getMaxPhoto());
+  if (arcPosition && intensity){
+    moveToFireFuzzy.updateFuzzy();
+    Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between  0 - 1
+    Znorm = moveToFireFuzzy.getOutputValue('Z');  // num between -1 - 1
+    // scale to motor range of +- 500 and input to motor
+    motor.desiredControl(0, Ynorm*500, Znorm*500); 
+  }
 }
 
 void Suppressor() {

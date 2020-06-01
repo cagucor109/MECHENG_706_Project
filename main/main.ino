@@ -1,8 +1,8 @@
 // Project 2 (Firefighter project) for MechEng706 Mechatronics design
 // Authors (Group 21):  Narada Hu, nhu769
 //                   :  Rachel Li, rli142
-//                   :
-//                   :
+//                   :  Michael Carswell, mcar546
+//                   :  Carlos Aguilera, cagu554
 
 // This is the main file for controlling the vex robot. It includes the
 // main behaviour control system and calls upon supporting functions and
@@ -30,34 +30,29 @@ Motors motor;
 Fuzzy avoidFuzzy(1);
 Fuzzy moveToFireFuzzy(2);
 //To be replaced by proper readings variables
-int obstacleFrontDistance;
-int photoReadings;
 int firesLeft = 2;
 int firesRecorded = 0;
 int maxPhotoDetected = 0;
 int totalTurn = 0; //amount turned during scan phase of locate
 int timeSearched; // time taken to move and serach of fire if nothing is seen for a full rotation
-// thigns to remove when combined with sensor
-bool fireDetected, arcAngle, photoInten, checkFront, BatteryLow = false;
-
-
 bool locateFinished = false;
 bool first = false; //first time entering extinguish state
 int updateFanMillis = 0;
-
-
-
+int firesRecorded = 0;
+ float firstFire = 0;
 
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
 HardwareSerial *SerialCom;
 //----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
-#define FIREDISTANCE 50
-#define FIRELOCATEVALUE 0 //photosensor value for fire to count as located
-#define DETECTION_THR 0 // threshold range for redetection of fire during relocation
+#define FIREDISTANCE 0.12 // 20cm from middle of robot to middle of fire obstacle
+#define FIRELOCATEVALUE 250 //photosensor value for fire to count as located might remove this if can be imported from sensors.h
+#define DETECTION_THR 100 // threshold range for redetection of fire during relocation
 #define FANRUNTIME 10000 // 10s
-#define LIGHTOFF 0
+#define OBSTACLETHRESHOLD 0.25 // 15cm  
+#define ARCTHRESHOLD 10 // if fire is +-10degrees threshold infront of robot
+#define INTENSITYTHRESHOLD 0.8 // 80%
 
 // Enum for motion states
 enum MOTION {
@@ -80,22 +75,8 @@ enum LOCATE {
   REPOSITION
 };
 
-static LOCATE locate_state = SCAN; //place in main loop?
 
-// Declare commands and command flags
-/*
-//MOTION halt_command;
-int halt_output_flag;
-//MOTION extinguish_command;
-int extinguish_output_flag;
-//MOTION avoid_command;
-int avoid_output_flag;
-//MOTION moveToFire_command;
-int moveToFire_output_flag;
-//MOTION locate_command;
-int locate_output_flag;
 
-MOTION motor_input;*/
 
 //----------------------Main loop------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
@@ -103,9 +84,10 @@ void setup() {
 
 //void main() {
 void loop() { 
+  static LOCATE locate_state = SCAN; // initialise locate FSM
+  
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
-  // update functions need to be inplemented
   sensor.updateArcAngle();  // this is for moveToFire
   sensor.checkZones();      // this is for Avoid
   Suppressor();
@@ -114,7 +96,7 @@ void loop() {
 
 //----------------------Sensing functions------------------------------------------------------------------------------------------------------------------------------------------
 bool extinguish_output_flag() {
-  if (obstacleFrontDistance < FIREDISTANCE){
+  if (sensor.getZoneScore('front') < FIREDISTANCE){
     return true;
   } else {
     return false;
@@ -127,27 +109,30 @@ bool moveToFire_output_flag() {
   // to moveToFire behaviour. It is set when we have finishe repositioning to
   // the largest phototransistor reading and is also reset when moving to fire 
   // for the next time we enter that state/behaviour.
-  if((locateFinished == true)&&(fireDetected == true)){ // add brackets and sensors.firedetected when ready
+  if((locateFinished == true)&&(sensor.isDetected())){
     return true;
    
   } else {
-    if (fireDetected == false){
+    if (sensor.isDetected()){ // this resets locateFinished when we supress move to fire
       locateFinished = false;
     }
     return false; 
   }
 }
 bool halt_output_flag() {
-  if ((firesLeft == 0) || (BatteryLow)) { //add battery low
+  // checks battery or if all fires are extinguished
+  if ((firesLeft == 0) || (checkBattery())) {  
     return true;
   } else {
     return false;
   }
 }
 bool avoid_output_flag() {
-  if (checkFront == true){ // add sensor.checkZone('front') < obstacleThreshold
-    if ((arcAngle == true) && (photoInten == true)){     // abs(sensor.getPhotoArcAngle()) < arcThreshold && sensor.getIntensity > intensityThreshold
-      if (obstacleFrontDistance < FIREDISTANCE) { // sensor.checkZone('front') <fireThreshold
+  // if there is an obstacle infront
+  if (sensor.getZoneScore('front') < OBSTACLETHRESHOLD){
+    // if fire brightly infront and centreish
+    if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD){  
+      if (sensor.getZoneScore('front') < FIREDISTANCE) { // this gets the robot within 20cm
         return true;
       }
       return false;
@@ -162,8 +147,6 @@ bool avoid_output_flag() {
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
 void locate_command() {
-  int firesRecorded = 0;
-  float firstFire = 0;
   //next state FSM
   //when to exit a state and which state to transition to
   switch (locate_state)
@@ -172,7 +155,7 @@ void locate_command() {
       if (sensor.getGyroState()){ // if gyro off turn on
         sensor.enableGyro();
       }
-      if (sensor.getPhoto(2) > FIRELOCATEVALUE){
+      if (sensor.getPhoto(2) > PHOTO_DETECT_THRESHOLD){
         firstFire = sensor.getAngle();
         locate_state = RECORD;
       }
@@ -189,16 +172,16 @@ void locate_command() {
     case RECORD:
       if (firesLeft == firesRecorded) {
         locate_state = REPOSITION;
-      } else if (firesRecorded < firesLeft && sensor.getPhoto(2) < FIRELOCATEVALUE) {
+      } else if (firesRecorded < firesLeft && sensor.getPhoto(2) < PHOTO_DETECT_THRESHOLD) { // this define is from sensors.h
         locate_state = SCAN;
       }
       break;
     case REPOSITION:
       if (locateFinished == true) locate_state = SCAN; 
-      break; //may need to reevaluate
+      break;
   }
 
-  //doing stuff
+  // State output logic
   switch(locate_state) {
     case SCAN:
       scan();
@@ -218,8 +201,6 @@ void locate_command() {
 void scan() {
   //rotate CW
   motor.desiredControl(0,0,90);
-  //read photo sensors here?
-  
 }
 
 void search() {
@@ -228,17 +209,19 @@ void search() {
 }
 
 void record() {
-  // continues to turn until fire is no longer seen on the 
+  // continues to turn until fire is no longer seen on the photoresistor
   firesRecorded++;
-  maxPhotoDetected = sensor.getPhoto(2);//to replace with sensor function
+  if (sensor.getPhoto(2) > maxPhotoDetected){
+    maxPhotoDetected = sensor.getPhoto(2);//record photoresistor value
+  } 
 }
 
 void reposition() { 
-    if (photoReadings > (maxPhotoDetected - DETECTION_THR)){
+  // rotate CW until find max photoresistor position
+    if (sensor.getPhoto(2) > (maxPhotoDetected - DETECTION_THR)){
        motor.desiredControl(0,0,0);
        locateFinished = true;
-       
-    } else {
+    } else { 
       motor.desiredControl(0,0,90); 
     }
 }
@@ -246,10 +229,12 @@ void reposition() {
 void halt_command() {
   motor.desiredControl(0,0,0);
   //flash a LED to be cool
+  slow_flash_LED_builtin();
+  fast_flash_double_LED_builtin();
+  slow_flash_LED_builtin();
 }
 
 void extinguish_command(){
-
   //entering timestamp turn fan on and stop moving
   if (first == false) {
     motor.desiredControl(0,0,0);
@@ -259,7 +244,7 @@ void extinguish_command(){
     first = true;
   }
 
-  if ((millis() - updateFanMillis > FANRUNTIME) && (photoReadings > LIGHTOFF)){
+  if ((millis() - updateFanMillis > FANRUNTIME) && (!sensor.getDetected(2) && !sensor.getDetected(3)){
     motor.controlFan(false);
     firesLeft--;
     updateFanMillis = millis();
@@ -271,10 +256,10 @@ void extinguish_command(){
 void avoid_command() {
   bool front, left, right;
   double Xnorm, Ynorm = 0;
-  front = moveToFireFuzzy.setCrispInput('front', sensor.getZoneScore('front'));
-  left = moveToFireFuzzy.setCrispInput('left', sensor.getZoneScore('left'));
-  right = moveToFireFuzzy.setCrispInput('right', sensor.getZoneScore('right'));
-  if (front && left && right){
+  front = moveToFireFuzzy.setCrispInput('front', sensor.getZoneScore('front')); // connects sensors to fuzzy input
+  left = moveToFireFuzzy.setCrispInput('left', sensor.getZoneScore('left'));    // connects sensors to fuzzy input
+  right = moveToFireFuzzy.setCrispInput('right', sensor.getZoneScore('right')); // connects sensors to fuzzy input
+  if (front && left && right){// boolean return check if inputs are successfully connected
     avoidFuzzy.updateFuzzy();
     Xnorm = moveToFireFuzzy.getOutputValue('X');  // num between -1 - 1
     Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between -1 - 1
@@ -286,9 +271,9 @@ void avoid_command() {
 void moveToFire_command() {
   bool arcPosition, intensity;
   double Ynorm, Znorm = 0;
-  arcPosition = moveToFireFuzzy.setCrispInput('arcPosition', sensor.getPhotoArcAngle());
-  intensity = moveToFireFuzzy.setCrispInput('intensity', sensor.getMaxPhoto());
-  if (arcPosition && intensity){
+  arcPosition = moveToFireFuzzy.setCrispInput('arcPosition', sensor.getNormPhotoArc()); // connects sensors to fuzzy input
+  intensity = moveToFireFuzzy.setCrispInput('intensity', sensor.getMaxPhoto());         // connects sensors to fuzzy input
+  if (arcPosition && intensity){ // boolean return check if inputs are successfully connected
     moveToFireFuzzy.updateFuzzy();
     Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between  0 - 1
     Znorm = moveToFireFuzzy.getOutputValue('Z');  // num between -1 - 1
@@ -314,75 +299,102 @@ void Suppressor() {
   } else { // default behaviour/lowest priority
     locate_command();
   }
-
-  motor.powerMotors();
-  //sleep(tick);
 }
 
-//----------------------- case study code ---------------------------------------------------------
-/*
-void avoid() {
-  intval;
-  val = ir_detect();
-  if (val == 0b11) {
-    avoid_output_flag = 1;
-    avoid_command = BACKWARD;
+//---------------------- Battery Low -----------------------------------------
+
+void fast_flash_double_LED_builtin()
+{
+  static byte indexer = 0;
+  static unsigned long fast_flash_millis;
+  if (millis() > fast_flash_millis) {
+    indexer++;
+    if (indexer > 4) {
+      fast_flash_millis = millis() + 700;
+      digitalWrite(LED_BUILTIN, LOW);
+      indexer = 0;
+    } else {
+      fast_flash_millis = millis() + 100;
+      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
   }
-  else if (val == 0b10) {
-    avoid_output_flag = 1;
-    avoid_command = RIGHT_ARC;
-  } else if (val == 0b01) {
-    avoid_output_flag = 1;
-    avoid_command = LEFT_ARC;
+}
+
+void slow_flash_LED_builtin()
+{
+  static unsigned long slow_flash_millis;
+  if (millis() - slow_flash_millis > 2000) {
+    slow_flash_millis = millis();
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  }
+}
+
+bool checkBattery() {
+  static byte counter_lipo_voltage_ok;
+  static unsigned long previous_millis;
+  if (millis() - previous_millis > 500) { //print massage every 500ms
+    previous_millis = millis();
+    SerialCom->println("STOPPED---------");
+    //500ms timed if statement to check lipo and output speed settings
+    if (is_battery_voltage_OK()) {
+      SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
+      SerialCom->println(counter_lipo_voltage_ok);
+      counter_lipo_voltage_ok++;
+      if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
+        counter_lipo_voltage_ok = 0;
+        motor.enable_motors();
+        SerialCom->println("Lipo OK returning to RUN STATE");
+        return 1;
+      }
+    } else
+    {
+      counter_lipo_voltage_ok = 0;
+      return 0;
+    }
+  }
+}
+
+
+bool is_battery_voltage_OK()
+{
+  static byte Low_voltage_counter;
+  static unsigned long previous_millis;
+
+  int Lipo_level_cal;
+  int raw_lipo;
+  //the voltage of a LiPo cell depends on its chemistry and varies from about 3.5V (discharged) = 717(3.5V Min) https://oscarliang.com/lipo-battery-guide/
+  //to about 4.20-4.25V (fully charged) = 860(4.2V Max)
+  //Lipo Cell voltage should never go below 3V, So 3.5V is a safety factor.
+  raw_lipo = analogRead(A0);
+  Lipo_level_cal = (raw_lipo - 717);
+  Lipo_level_cal = Lipo_level_cal * 100;
+  Lipo_level_cal = Lipo_level_cal / 143;
+
+  if (Lipo_level_cal > 0 && Lipo_level_cal < 160) {
+    previous_millis = millis();
+    SerialCom->print("Lipo level:");
+    SerialCom->print(Lipo_level_cal);
+    SerialCom->print("%");
+    // SerialCom->print(" : Raw Lipo:");
+    // SerialCom->println(raw_lipo);
+    SerialCom->println("");
+    Low_voltage_counter = 0;
+    return true;
   } else {
-    avoid_output_flag = 0;
+    if (Lipo_level_cal < 0)
+      SerialCom->println("Lipo is Disconnected or Power Switch is turned OFF!!!");
+    else if (Lipo_level_cal > 160)
+      SerialCom->println("!Lipo is Overchanged!!!");
+    else {
+      SerialCom->println("Lipo voltage too LOW, any lower and the lipo with be damaged");
+      SerialCom->print("Please Re-charge Lipo:");
+      SerialCom->print(Lipo_level_cal);
+      SerialCom->println("%");
+    }
+
+    Low_voltage_counter++;
+    if (Low_voltage_counter > 5)
+      return false;
+    else
+      return true;
   }
-}
-
-void extinguish() {
-  int left_photo, right_photo, delta;
-  left_photo = analog(1);
-  right_photo = analog(0);
-  delta = right_photo - left_photo;
-  if (abs(delta) > photo_dead_zone) {
-    if (delta > 0)extinguish_command = LEFT_TURN;
-    else extinguish_command = RIGHT_TURN;
-    extinguish_output_flag = 1;
-  } else  extinguish_output_flag = 0;
-}
-
-void locate() {
-  int left_photo, right_photo, delta;
-  left_photo = analog(1);
-  right_photo = analog(0);
-  delta = right_photo - left_photo;
-  if (abs(delta) > photo_dead_zone) {
-    if (delta > 0)locate_command = LEFT_TURN;
-    else locate_command = RIGHT_TURN;
-    locate_output_flag = 1;
-  } else  locate_output_flag = 0;
-}
-
-void moveToFire() {
-  bumper_check();
-  if (bumper_left && bump_right) {
-    moveToFire_output_flag = 1;
-    moveToFire_command = BACKWARD;
-    sleep (0.2);
-    moveToFire_command = LEFT_TURN;
-    sleep (0.4);
-  } else if (bumper_left) {
-    moveToFire_output_flag = 1;
-    moveToFire_command = RIGHT_TURN;
-    sleep(0.4);
-  } else if (bump_right) {
-    moveToFire_output_flag = 1;
-    moveToFire_command = LEFT_TURN;
-    sleep (0.4);
-  } else if (bump_back) {
-    moveToFire_output_flag = 1;
-    moveToFire_command = LEFT_TURN;
-    sleep(0.2);
-  } else  moveToFire_output_flag = 0
-  }
-  */

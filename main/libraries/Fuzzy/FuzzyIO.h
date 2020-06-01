@@ -3,9 +3,7 @@
 
 #include "FuzzyMember.h"
 #include "Arduino.h"
-#include <vector>
-#include <algorithm>
-#include <stdlib.h>
+
 
 #define SEPARATOR -2 // separates points not joined by lines
 

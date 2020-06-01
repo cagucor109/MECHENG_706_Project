@@ -21,8 +21,7 @@
 #include "libraries\Fuzzy\Fuzzy.h"
 #include "libraries\Fuzzy\Fuzzy.cpp"
 //Initializing global objects
-//Controllers controlSystem;
-//Sensors sensor;
+Sensors sensor;
 Motors motor;
 
 Fuzzy avoidFuzzy(1);

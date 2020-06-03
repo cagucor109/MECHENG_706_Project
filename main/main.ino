@@ -23,10 +23,25 @@
 //Initializing global objects
 Sensors sensor;
 Motors motor;
-
 Fuzzy avoidFuzzy(1);
 Fuzzy moveToFireFuzzy(2);
-//To be replaced by proper readings variables
+
+
+//----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
+//Serial Pointer
+HardwareSerial *SerialCom;
+//----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
+
+//Constants 
+#define FIREDISTANCE 0.12 // 20cm from middle of robot to middle of fire obstacle
+#define FIRELOCATEVALUE 250 //photosensor value for fire to count as located might remove this if can be imported from sensors.h
+#define DETECTION_THR 100 // threshold range for redetection of fire during relocation
+#define FANRUNTIME 10000 // 10s
+#define OBSTACLETHRESHOLD 0.25 // 15cm  
+#define ARCTHRESHOLD 10 // if fire is +-10degrees threshold infront of robot
+#define INTENSITYTHRESHOLD 0.8 // 80%
+
+//Global Variables
 int firesLeft = 2;
 int firesRecorded = 0;
 int maxPhotoDetected = 0;
@@ -35,21 +50,7 @@ int timeSearched; // time taken to move and serach of fire if nothing is seen fo
 bool locateFinished = false;
 bool first = false; //first time entering extinguish state
 int updateFanMillis = 0;
-int firesRecorded = 0;
 float firstFire = 0;
-
-
-//----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
-//Serial Pointer
-HardwareSerial *SerialCom;
-//----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
-#define FIREDISTANCE 0.12 // 20cm from middle of robot to middle of fire obstacle
-#define FIRELOCATEVALUE 250 //photosensor value for fire to count as located might remove this if can be imported from sensors.h
-#define DETECTION_THR 100 // threshold range for redetection of fire during relocation
-#define FANRUNTIME 10000 // 10s
-#define OBSTACLETHRESHOLD 0.25 // 15cm  
-#define ARCTHRESHOLD 10 // if fire is +-10degrees threshold infront of robot
-#define INTENSITYTHRESHOLD 0.8 // 80%
 
 // Enum for motion states
 enum MOTION {
@@ -72,7 +73,7 @@ enum LOCATE {
   REPOSITION
 };
 
-
+LOCATE locate_state = SCAN;//Initialising locate FSM
 
 
 //----------------------Main loop------------------------------------------------------------------------------------------------------------------------------------------
@@ -81,7 +82,7 @@ void setup() {
 
 //void main() {
 void loop() { 
-  static LOCATE locate_state = SCAN; // initialise locate FSM
+  //static LOCATE locate_state = SCAN; // moved to global to avoid scope problems
   
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
@@ -91,31 +92,29 @@ void loop() {
   motor.powerMotors();
 }
 
-//----------------------Sensing functions------------------------------------------------------------------------------------------------------------------------------------------
-bool extinguish_output_flag() {
-  if (sensor.getZoneScore('front') < FIREDISTANCE){
-    return true;
-  } else {
-    return false;
+
+//----------------------Behaviour Selection--------------------------------------------------------------------------------------------------------------------------------
+void Suppressor() {
+  // This function calls sensing functions to evaluates
+  // which command to output to motors
+
+  // second lowest priority`
+  if (moveToFire_output_flag() == 1) {
+    moveToFire_command();
+  } else  if (avoid_output_flag() == 1) {
+    avoid_command();
+  } else  if (extinguish_output_flag() == 1) {
+    extinguish_command();
+  } else if (halt_output_flag() == 1) {
+    // highest priority
+    halt_command();
+  } else { // default behaviour/lowest priority
+    locate_command();
   }
 }
 
-bool moveToFire_output_flag() {
-  // some of this is for locate because it doesnt have a flag function
-  // locatefinished is used to check that locate is finished before moving
-  // to moveToFire behaviour. It is set when we have finishe repositioning to
-  // the largest phototransistor reading and is also reset when moving to fire 
-  // for the next time we enter that state/behaviour.
-  if((locateFinished == true)&&(sensor.isDetected())){
-    return true;
-   
-  } else {
-    if (sensor.isDetected()){ // this resets locateFinished when we supress move to fire
-      locateFinished = false;
-    }
-    return false; 
-  }
-}
+//----------------------Suppressor flag functions--------------------------------------------------------------------------------------------------------------------------
+
 bool halt_output_flag() {
   // checks battery or if all fires are extinguished
   if ((firesLeft == 0) || (checkBattery())) {  
@@ -124,12 +123,21 @@ bool halt_output_flag() {
     return false;
   }
 }
+
+bool extinguish_output_flag() {
+  if (sensor.getZoneScore('front') < FIREDISTANCE){
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool avoid_output_flag() {
   // if there is an obstacle infront
   if (sensor.getZoneScore('front') < OBSTACLETHRESHOLD){
     // if fire brightly infront and centreish
     if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD){  
-      if (sensor.getZoneScore('front') < FIREDISTANCE) { // this gets the robot within 20cm
+      if (sensor.getZoneScore('front') < FIREDISTANCE) { // Positions robot directly in front of fire
         return true;
       }
       return false;
@@ -140,9 +148,25 @@ bool avoid_output_flag() {
   }
 }
 
-
+bool moveToFire_output_flag() {
+  // some of this is for locate because it doesnt have a flag function
+  // locatefinished is used to check that locate is finished before moving
+  // to moveToFire behaviour. It is set when we have finished repositioning to
+  // the largest phototransistor reading and is also reset when moving to fire 
+  // for the next time we enter that state/behaviour.
+  if((locateFinished == true)&&(sensor.isDetected())){ //Only move to fire when locate is complete
+    return true;
+   
+  } else {
+    if (sensor.isDetected()){ // this resets locateFinished when we supress move to fire
+      locateFinished = false;
+    }
+    return false; 
+  }
+}
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
+//-------Locate---------
 void locate_command() {
   //next state FSM
   //when to exit a state and which state to transition to
@@ -223,6 +247,7 @@ void reposition() {
     }
 }
 
+//-------Halt---------
 void halt_command() {
   motor.desiredControl(0,0,0);
   //flash a LED to be cool
@@ -231,9 +256,10 @@ void halt_command() {
   slow_flash_LED_builtin();
 }
 
+//-------Extinguish---------
 void extinguish_command(){
-  //entering timestamp turn fan on and stop moving
-  if (first == false) {
+  //entering: timestamp, turn fan on, and stop moving
+  if (first = false) {
     motor.desiredControl(0,0,0);
     motor.controlFan(true);
     
@@ -241,7 +267,7 @@ void extinguish_command(){
     first = true;
   }
 
-  if ((millis() - updateFanMillis > FANRUNTIME) && (!sensor.getDetected(2) && !sensor.getDetected(3)){
+  if ((millis() - updateFanMillis > FANRUNTIME) && (!sensor.getDetected(2) && !sensor.getDetected(3))){//Extingush for at least 10 seconds and until fire is no longer detected.
     motor.controlFan(false);
     firesLeft--;
     updateFanMillis = millis();
@@ -250,6 +276,7 @@ void extinguish_command(){
   } 
 }
 
+//-------Avoid---------
 void avoid_command() {
   bool front, left, right;
   double Xnorm, Ynorm = 0;
@@ -261,10 +288,11 @@ void avoid_command() {
     Xnorm = moveToFireFuzzy.getOutputValue('X');  // num between -1 - 1
     Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between -1 - 1
     // scale to motor range of +- 500 and input to motor
-    motor.desiredControl(Xnorm*500, Ynorm*500); 
+    motor.desiredControl(Xnorm*500, Ynorm*500,0); 
   }
 }
 
+//-------Move to Fire---------
 void moveToFire_command() {
   bool arcPosition, intensity;
   double Ynorm, Znorm = 0;
@@ -279,26 +307,7 @@ void moveToFire_command() {
   }
 }
 
-void Suppressor() {
-  // This function calls sensing functions to evaluates
-  // which command to output to motors
-
-  // second lowest priority`
-  if (moveToFire_output_flag() == 1) {
-    moveToFire_command();
-  } else  if (avoid_output_flag() == 1) {
-    avoid_command();
-  } else  if (extinguish_output_flag() == 1) {
-    extinguish_command();
-  } else if (halt_output_flag() == 1) {
-    // highest priority
-    halt_command();
-  } else { // default behaviour/lowest priority
-    locate_command();
-  }
-}
-
-//---------------------- Battery Low -----------------------------------------
+//---------------------- Battery Check and LED Flash -----------------------------------------
 
 void fast_flash_double_LED_builtin()
 {
@@ -394,4 +403,5 @@ bool is_battery_voltage_OK()
       return false;
     else
       return true;
+  }
   }

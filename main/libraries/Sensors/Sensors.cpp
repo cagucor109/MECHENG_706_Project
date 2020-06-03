@@ -100,14 +100,6 @@ void Sensors::updateAngle(){
 			gyroRate-=GYRO_CORRECTION*GYRO_READ_TIME; //this corrects for sensor drift that is inherrent in approximation of double integration.
 			this->Angle+=gyroRate;
 
-			if ( this->Angle < -360)// Shifting of angle when a revolution is complete.
-			{
-				this->Angle += 360;
-			}
-			else if ( this->Angle > 359)
-			{
-				this->Angle -= 360;
-			}
 		}		
 	}
 }

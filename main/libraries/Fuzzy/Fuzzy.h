@@ -16,7 +16,7 @@ public:
     ~Fuzzy();
     
     // Getters
-    float getOuputValue(char* outputName);
+    float getOutputValue(char* outputName);
 
     // Public Methods
     bool addRuleSet(FuzzyRules* ruleSet);  

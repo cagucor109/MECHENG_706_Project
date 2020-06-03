@@ -95,6 +95,7 @@ private:
 	bool FireDetected[4];
 	int NumFiresDetected;
 	int estArcAngle;
+	float estArcNorm;
 	uint8_t FindMaxPhotoIndex();
 	
 	//Filters

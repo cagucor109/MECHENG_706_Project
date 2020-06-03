@@ -43,7 +43,7 @@ for (int i = 0; i<4; i++){
 	}
 
 	uint16_t Sensors::getMaxPhoto(){
-		return this->Photos[FindMaxPhotoIndex()];
+		return this->Photos[FindMaxPhotoIndex()]/1024; //max photo reading is normalised between 0 and 1
 	}
 	
 	bool Sensors::getDetected(byte POSITION_ID){
@@ -191,6 +191,7 @@ return  Reading;
 
 void Sensors::updatePhotos(){  
 	uint16_t Reading=0;
+	uint16_t maxPhoto
 	NumFiresDetected = 0;
 
 	for(int i=0;i<4;i++){
@@ -204,6 +205,7 @@ void Sensors::updatePhotos(){
 	//filter readings are store
 	  this->Photos[i]= PhotoFilters[i]->filter(Reading,0);
 	}
+
 }
 
 void Sensors::updateArcAngle() {

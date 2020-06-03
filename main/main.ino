@@ -20,12 +20,12 @@
 #include "libraries\Motors\Motors.cpp"
 #include "libraries\Fuzzy\Fuzzy.h"
 #include "libraries\Fuzzy\Fuzzy.cpp"
+
 //Initializing global objects
 Sensors sensor;
 Motors motor;
 Fuzzy avoidFuzzy(1);
 Fuzzy moveToFireFuzzy(2);
-
 
 //----------------------Battery check and Serial Comms---------------------------------------------------------------------------------------------------------------------
 //Serial Pointer
@@ -178,7 +178,7 @@ void locate_command() {
       }
       break;
     case SEARCH:
-      if (millis() - timeSearched > 3000) {
+      if (millis() - timeSearched > 1000) {
         timeSearched = millis();
         locate_state = SCAN;
       } else locate_state = SEARCH;

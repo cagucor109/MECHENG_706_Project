@@ -87,6 +87,9 @@ void Sensors::disableGyro(){
 	this->gyroState=false;
 }
 
+void Sensors::resetGyroAngle() {
+	this->Angle = 0;
+}
 
 void Sensors::updateAngle(){
 	if(gyroState){//The gyro will only update if enabled.

@@ -168,7 +168,8 @@ void locate_command() {
       if (sensor.getGyroState()){ // if gyro off turn on
         sensor.enableGyro();
       }
-      if (sensor.getPhoto(2) > PHOTO_DETECT_THRESHOLD){
+      if (sensor.getPhoto(2) > PHOTO_DETECT_THRESHOLD){ // this define is from sensors.h
+        locate_state = SCAN;
         firstFire = sensor.getAngle();
         locate_state = RECORD;
       }
@@ -181,16 +182,23 @@ void locate_command() {
       if (millis() - timeSearched > 1000) {
         timeSearched = millis();
         locate_state = SCAN;
-      } else locate_state = SEARCH;
+		sensors.resetGryoAngle();
+      } else {
+		  locate_state = SEARCH;
+	  }
+	  break;
     case RECORD:
-      if (firesLeft == firesRecorded) {
+	  if (sensor.getAngle() > 360)
         locate_state = REPOSITION;
-      } else if (firesRecorded < firesLeft && sensor.getPhoto(2) < PHOTO_DETECT_THRESHOLD) { // this define is from sensors.h
-        locate_state = SCAN;
+      } else { 
+		locate_state = SCAN;
       }
       break;
     case REPOSITION:
-      if (locateFinished == true) locate_state = SCAN; 
+      if (locateFinished == true) {
+		  locate_state = SCAN;
+		  sensors.resetGryoAngle();
+	  }
       break;
   }
 

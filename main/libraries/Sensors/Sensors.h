@@ -50,6 +50,7 @@ public:
 	//Gyro
 	float getAngle();
 	bool getGyroState();
+	void resetGyroAngle();
 
 // utilities
     // Gryo

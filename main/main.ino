@@ -95,20 +95,18 @@ void loop() {
 
 //----------------------Behaviour Selection--------------------------------------------------------------------------------------------------------------------------------
 void Suppressor() {
-  // This function calls sensing functions to evaluates
-  // which command to output to motors
-
-  // second lowest priority`
-  if (moveToFire_output_flag() == 1) {
-    moveToFire_command();
+  // This function calls sensing functions to evaluates which command to output to motors
+  
+  // highest priority
+  if (halt_output_flag() == 1) {
+    halt_command();
+  } else if (extinguish_output_flag() == 1) {
+    extinguish_command();
   } else  if (avoid_output_flag() == 1) {
     avoid_command();
-  } else  if (extinguish_output_flag() == 1) {
-    extinguish_command();
-  } else if (halt_output_flag() == 1) {
-    // highest priority
-    halt_command();
-  } else { // default behaviour/lowest priority
+  } else  if  (moveToFire_output_flag() == 1) {
+    moveToFire_command();
+  } else  { // default behaviour/lowest priority
     locate_command();
   }
 }
@@ -119,17 +117,17 @@ bool halt_output_flag() {
   // checks battery or if all fires are extinguished
   if ((firesLeft == 0) || (checkBattery())) {  
     return true;
-  } else {
-    return false;
-  }
+  } 
+  return false;
 }
 
 bool extinguish_output_flag() {
-  if (sensor.getZoneScore('front') < FIREDISTANCE){
-    return true;
-  } else {
-    return false;
-  }
+  if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD){
+    if (sensor.getZoneScore('front') < FIREDISTANCE){
+      return true;
+    } 
+  } 
+  return false;
 }
 
 bool avoid_output_flag() {
@@ -137,15 +135,11 @@ bool avoid_output_flag() {
   if (sensor.getZoneScore('front') < OBSTACLETHRESHOLD){
     // if fire brightly infront and centreish
     if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD){  
-      if (sensor.getZoneScore('front') < FIREDISTANCE) { // Positions robot directly in front of fire
-        return true;
-      }
       return false;
     }
     return true;
-  }else {
-    return false;
   }
+  return false;
 }
 
 bool moveToFire_output_flag() {
@@ -156,13 +150,11 @@ bool moveToFire_output_flag() {
   // for the next time we enter that state/behaviour.
   if((locateFinished == true)&&(sensor.isDetected())){ //Only move to fire when locate is complete
     return true;
-   
-  } else {
-    if (sensor.isDetected()){ // this resets locateFinished when we supress move to fire
-      locateFinished = false;
-    }
-    return false; 
+  } 
+  if (sensor.isDetected()){ // this resets locateFinished when we supress move to fire
+    locateFinished = false;
   }
+  return false; 
 }
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 

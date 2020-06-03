@@ -11,7 +11,7 @@
 #define LEFT_REAR 47
 #define RIGHT_FRONT 51 
 #define RIGHT_REAR 50
-#define FAN_PIN 55 //update
+#define FAN_PIN 53 //update
 
 
 

@@ -2,7 +2,6 @@
 #define FUZZYMEMBER_H
 
 #include "Arduino.h"
-#include <cstring>
 
 class FuzzyMember{
 public:

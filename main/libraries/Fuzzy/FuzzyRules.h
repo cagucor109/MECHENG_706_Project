@@ -19,8 +19,8 @@ public:
     bool evaluateRules(); // assign outputs based on inputs
 
 private:
-    std::vector<Antecedent*> _fuzzyAntecedents;
-    std::vector<Consequent*> _fuzzyConsequents;
+    LinkedList<Antecedent*> _fuzzyAntecedents;
+    LinkedList<Consequent*> _fuzzyConsequents;
 };
 
 class Antecedent{
@@ -36,8 +36,8 @@ public:
     float evaluateAntecedent(); // check the truth level of the antecendent, a 2.0 represents no antecendents set
 
 private:
-    std::vector<FuzzyMember*> _antecedentMembers; // fuzzy member
-    std::vector<FuzzyI*> _antecedentInputs; // fuzzy input
+    LinkedList<FuzzyMember*> _antecedentMembers; // fuzzy member
+    LinkedList<FuzzyI*> _antecedentInputs; // fuzzy input
 };
 
 class Consequent{
@@ -49,12 +49,12 @@ public:
     ~Consequent();
 
     // Public Methods
-    bool makeConsequent(FuzzyO* output, FuzzyMember* member); // make consequent
+    bool addConsequent(FuzzyO* output, FuzzyMember* member); // add consequent to list
     bool evaluateConsequent(float antecedentTruth);
     
 private:
-    FuzzyMember *_consequentMember; // fuzzy member
-    FuzzyO *_consequentOutput; 
+    LinkedList<FuzzyMember*> _consequentMembers; // fuzzy member
+    LinkedList<FuzzyI*> _consequentOutputs; // fuzzy output
 };
 
 #endif

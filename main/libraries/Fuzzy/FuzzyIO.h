@@ -3,9 +3,7 @@
 
 #include "FuzzyMember.h"
 #include "Arduino.h"
-#include <vector>
-#include <algorithm>
-#include <stdlib.h>
+#include <LinkedList.h>
 
 #define SEPARATOR -2 // separates points not joined by lines
 
@@ -29,7 +27,7 @@ class FuzzyIO{
     
 
 protected:
-    std::vector<FuzzyMember*> _fuzzyMembers;
+    LinkedList<FuzzyMember*> _fuzzyMembers;
     int _numLines;
     char _name[8];
     char _names[32];
@@ -74,11 +72,11 @@ public:
 private:
     float _outputValue; // final output
     // all points
-    std::vector<float> _xPointsRaw;
-    std::vector<float> _yPointsRaw;
+    LinkedList<float> _xPointsRaw;
+    LinkedList<float> _yPointsRaw;
     // final points
-    std::vector<float> _xPointsFinal;
-    std::vector<float> _yPointsFinal;
+    LinkedList<float> _xPointsFinal;
+    LinkedList<float> _yPointsFinal;
 
     // Private Methods
     void generatePoints(); // create raw points based on member function and truth value

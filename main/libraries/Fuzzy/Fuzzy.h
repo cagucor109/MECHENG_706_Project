@@ -29,8 +29,8 @@ public:
 
 private:
     FuzzyRules *_fuzzyRules; // Set of fuzzy rules
-    std::vector<FuzzyI*> _fuzzyInputs;
-    std::vector<FuzzyO*> _fuzzyOutputs;
+    LinkedList<FuzzyI*> _fuzzyInputs;
+    LinkedList<FuzzyO*> _fuzzyOutputs;
     
     // Private methods
     bool fuzzyify(); // perform fuzzification

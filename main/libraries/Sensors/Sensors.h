@@ -55,7 +55,7 @@ public:
     // Gryo
 	void enableGyro();
 	void disableGyro();	
-	void updateAngle();
+	void updateGyro();
 	
 	//Distance and light
 	void updateArcAngle();
@@ -77,6 +77,7 @@ private:
 	//Gryo
 	bool gyroState;
 	float Angle; // angle positive if rotated clockwise
+	int updateAngleMillis;
 
 	//Distance
 	uint16_t Distances[5]; 
@@ -95,6 +96,7 @@ private:
 	bool FireDetected[4];
 	int NumFiresDetected;
 	int estArcAngle;
+	float estArcNorm;
 	uint8_t FindMaxPhotoIndex();
 	
 	//Filters

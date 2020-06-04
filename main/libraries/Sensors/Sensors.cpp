@@ -43,7 +43,7 @@ for (int i = 0; i<4; i++){
 	}
 
 	uint16_t Sensors::getMaxPhoto(){
-		return this->Photos[FindMaxPhotoIndex()];
+		return this->Photos[FindMaxPhotoIndex()]/1024; //max photo reading is normalised between 0 and 1
 	}
 	
 	bool Sensors::getDetected(byte POSITION_ID){
@@ -87,28 +87,21 @@ void Sensors::disableGyro(){
 	this->gyroState=false;
 }
 
-
-void Sensors::updateAngle(){
+void Sensors::updateGyro(){
 	if(gyroState){//The gyro will only update if enabled.
-	
-		float gyroRate = (analogRead(GYRO_PIN) * 5.0) / 1023;
-		gyroRate -= 2.48;//Center readings on 0V. calibrated to the provided gryo
-		gyroRate/=0.007; //finds acceleration by dividing by sensitivity of gyro. With rotation in degrees
+	 	if (millis() - updateAngleMillis > UPDATEGYROTIME) {
+			updateAngleMillis = millis();
+			float gyroRate = (analogRead(GYRO_PIN) * 5.0) / 1023;
+			gyroRate -= 2.48;//Center readings on 0V. calibrated to the provided gryo
+			gyroRate/=0.007; //finds acceleration by dividing by sensitivity of gyro. With rotation in degrees
 
-		if (abs(gyroRate) >= 1) {//this is a minimum read threshold in degrees/second
-			gyroRate/=100; //Double integration of acceleration to angle *10ms*10ms (multiply by sample rate twice).
-			gyroRate-=GYRO_CORRECTION*GYRO_READ_TIME; //this corrects for sensor drift that is inherrent in approximation of double integration.
-			this->Angle+=gyroRate;
+			if (abs(gyroRate) >= 1) {//this is a minimum read threshold in degrees/second
+				gyroRate/=100; //Double integration of acceleration to angle *10ms*10ms (multiply by sample rate twice).
+				gyroRate-=GYRO_CORRECTION*GYRO_READ_TIME; //this corrects for sensor drift that is inherrent in approximation of double integration.
+				this->Angle+=gyroRate;
 
-			if ( this->Angle < -360)// Shifting of angle when a revolution is complete.
-			{
-				this->Angle += 360;
 			}
-			else if ( this->Angle > 359)
-			{
-				this->Angle -= 360;
-			}
-		}		
+		 }
 	}
 }
 
@@ -199,6 +192,7 @@ return  Reading;
 
 void Sensors::updatePhotos(){  
 	uint16_t Reading=0;
+	uint16_t maxPhoto;
 	NumFiresDetected = 0;
 
 	for(int i=0;i<4;i++){
@@ -212,6 +206,7 @@ void Sensors::updatePhotos(){
 	//filter readings are store
 	  this->Photos[i]= PhotoFilters[i]->filter(Reading,0);
 	}
+
 }
 
 void Sensors::updateArcAngle() {

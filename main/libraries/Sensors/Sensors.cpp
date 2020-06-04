@@ -87,11 +87,7 @@ void Sensors::disableGyro(){
 	this->gyroState=false;
 }
 
-void Sensors::resetGyroAngle() {
-	this->Angle = 0;
-}
-
-void Sensors::updateAngle(){
+void Sensors::updateGyro(){
 	if(gyroState){//The gyro will only update if enabled.
 	
 		float gyroRate = (analogRead(GYRO_PIN) * 5.0) / 1023;

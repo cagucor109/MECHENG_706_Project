@@ -80,13 +80,11 @@ LOCATE locate_state = SCAN;//Initialising locate FSM
 void setup() {
 }
 
-//void main() {
-void loop() { 
-  //static LOCATE locate_state = SCAN; // moved to global to avoid scope problems
-  
+void loop() {   
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
   sensor.updateArcAngle();  // this is for moveToFire
+  sensor.updateGryo(); // locate FSM gyro update
   sensor.checkZones();      // this is for Avoid
   Suppressor();
   motor.powerMotors();
@@ -176,19 +174,20 @@ void locate_command() {
       else if (sensor.getAngle() > 360) {
         locate_state = SEARCH;
         timeSearched = millis();
+		sensors.disableGyro();
       }
       break;
     case SEARCH:
       if (millis() - timeSearched > 1000) {
         timeSearched = millis();
         locate_state = SCAN;
-		sensors.resetGryoAngle();
+		sensors.enableGyro();
       } else {
 		  locate_state = SEARCH;
 	  }
 	  break;
     case RECORD:
-	  if (sensor.getAngle() > 360)
+	  if (sensor.getAngle() > 360 || firesLeft == firesRecorded)
         locate_state = REPOSITION;
       } else { 
 		locate_state = SCAN;
@@ -197,7 +196,7 @@ void locate_command() {
     case REPOSITION:
       if (locateFinished == true) {
 		  locate_state = SCAN;
-		  sensors.resetGryoAngle();
+		  sensors.disableGyro();
 	  }
       break;
   }
@@ -267,7 +266,7 @@ void extinguish_command(){
     first = true;
   }
 
-  if ((millis() - updateFanMillis > FANRUNTIME) && (!sensor.getDetected(2) && !sensor.getDetected(3))){//Extingush for at least 10 seconds and until fire is no longer detected.
+  if ((millis() - updateFanMillis > FANRUNTIME) && ((!sensor.getDetected(2) || !sensor.getDetected(3)))){//Extingush for at least 10 seconds and until fire is no longer detected.
     motor.controlFan(false);
     firesLeft--;
     updateFanMillis = millis();

@@ -50,13 +50,12 @@ public:
 	//Gyro
 	float getAngle();
 	bool getGyroState();
-	void resetGyroAngle();
 
 // utilities
     // Gryo
 	void enableGyro();
 	void disableGyro();	
-	void updateAngle();
+	void updateGyro();
 	
 	//Distance and light
 	void updateArcAngle();

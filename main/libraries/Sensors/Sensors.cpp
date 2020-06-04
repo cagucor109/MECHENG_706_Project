@@ -89,17 +89,19 @@ void Sensors::disableGyro(){
 
 void Sensors::updateGyro(){
 	if(gyroState){//The gyro will only update if enabled.
-	
-		float gyroRate = (analogRead(GYRO_PIN) * 5.0) / 1023;
-		gyroRate -= 2.48;//Center readings on 0V. calibrated to the provided gryo
-		gyroRate/=0.007; //finds acceleration by dividing by sensitivity of gyro. With rotation in degrees
+	 	if (millis() - updateAngleMillis > UPDATEGYROTIME) {
+			updateAngleMillis = millis();
+			float gyroRate = (analogRead(GYRO_PIN) * 5.0) / 1023;
+			gyroRate -= 2.48;//Center readings on 0V. calibrated to the provided gryo
+			gyroRate/=0.007; //finds acceleration by dividing by sensitivity of gyro. With rotation in degrees
 
-		if (abs(gyroRate) >= 1) {//this is a minimum read threshold in degrees/second
-			gyroRate/=100; //Double integration of acceleration to angle *10ms*10ms (multiply by sample rate twice).
-			gyroRate-=GYRO_CORRECTION*GYRO_READ_TIME; //this corrects for sensor drift that is inherrent in approximation of double integration.
-			this->Angle+=gyroRate;
+			if (abs(gyroRate) >= 1) {//this is a minimum read threshold in degrees/second
+				gyroRate/=100; //Double integration of acceleration to angle *10ms*10ms (multiply by sample rate twice).
+				gyroRate-=GYRO_CORRECTION*GYRO_READ_TIME; //this corrects for sensor drift that is inherrent in approximation of double integration.
+				this->Angle+=gyroRate;
 
-		}		
+			}
+		 }
 	}
 }
 
@@ -190,7 +192,7 @@ return  Reading;
 
 void Sensors::updatePhotos(){  
 	uint16_t Reading=0;
-	uint16_t maxPhoto
+	uint16_t maxPhoto;
 	NumFiresDetected = 0;
 
 	for(int i=0;i<4;i++){

@@ -32,7 +32,7 @@ Fuzzy moveToFireFuzzy(2);
 HardwareSerial *SerialCom;
 //----------------------Setup------------------------------------------------------------------------------------------------------------------------------------------
 
-//Constants 
+//Constants
 #define FIREDISTANCE 0.12 // 20cm from middle of robot to middle of fire obstacle
 #define FIRELOCATEVALUE 250 //photosensor value for fire to count as located might remove this if can be imported from sensors.h
 #define DETECTION_THR 100 // threshold range for redetection of fire during relocation
@@ -80,11 +80,11 @@ LOCATE locate_state = SCAN;//Initialising locate FSM
 void setup() {
 }
 
-void loop() {   
+void loop() {
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
   sensor.updateArcAngle();  // this is for moveToFire
-  sensor.updateGryo(); // locate FSM gyro update
+  sensor.updateGyro(); // locate FSM gyro update
   sensor.checkZones();      // this is for Avoid
   Suppressor();
   motor.powerMotors();
@@ -94,7 +94,7 @@ void loop() {
 //----------------------Behaviour Selection--------------------------------------------------------------------------------------------------------------------------------
 void Suppressor() {
   // This function calls sensing functions to evaluates which command to output to motors
-  
+
   // highest priority
   if (halt_output_flag() == 1) {
     halt_command();
@@ -113,26 +113,26 @@ void Suppressor() {
 
 bool halt_output_flag() {
   // checks battery or if all fires are extinguished
-  if ((firesLeft == 0) || (checkBattery())) {  
+  if ((firesLeft == 0) || (checkBattery())) {
     return true;
-  } 
+  }
   return false;
 }
 
 bool extinguish_output_flag() {
-  if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD){
-    if (sensor.getZoneScore('front') < FIREDISTANCE){
+  if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD) {
+    if (sensor.getZoneScore('front') < FIREDISTANCE) {
       return true;
-    } 
-  } 
+    }
+  }
   return false;
 }
 
 bool avoid_output_flag() {
   // if there is an obstacle infront
-  if (sensor.getZoneScore('front') < OBSTACLETHRESHOLD){
+  if (sensor.getZoneScore('front') < OBSTACLETHRESHOLD) {
     // if fire brightly infront and centreish
-    if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD){  
+    if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD) {
       return false;
     }
     return true;
@@ -144,15 +144,15 @@ bool moveToFire_output_flag() {
   // some of this is for locate because it doesnt have a flag function
   // locatefinished is used to check that locate is finished before moving
   // to moveToFire behaviour. It is set when we have finished repositioning to
-  // the largest phototransistor reading and is also reset when moving to fire 
+  // the largest phototransistor reading and is also reset when moving to fire
   // for the next time we enter that state/behaviour.
-  if((locateFinished == true)&&(sensor.isDetected())){ //Only move to fire when locate is complete
+  if ((locateFinished == true) && (sensor.isDetected())) { //Only move to fire when locate is complete
     return true;
-  } 
-  if (sensor.isDetected()){ // this resets locateFinished when we supress move to fire
+  }
+  if (sensor.isDetected()) { // this resets locateFinished when we supress move to fire
     locateFinished = false;
   }
-  return false; 
+  return false;
 }
 //----------------------State output Functions------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -163,10 +163,10 @@ void locate_command() {
   switch (locate_state)
   {
     case SCAN:
-      if (sensor.getGyroState()){ // if gyro off turn on
+      if (sensor.getGyroState()) { // if gyro off turn on
         sensor.enableGyro();
       }
-      if (sensor.getPhoto(2) > PHOTO_DETECT_THRESHOLD){ // this define is from sensors.h
+      if (sensor.getPhoto(2) > PHOTO_DETECT_THRESHOLD) { // this define is from sensors.h
         locate_state = SCAN;
         firstFire = sensor.getAngle();
         locate_state = RECORD;
@@ -174,81 +174,82 @@ void locate_command() {
       else if (sensor.getAngle() > 360) {
         locate_state = SEARCH;
         timeSearched = millis();
-		sensors.disableGyro();
+        sensor.disableGyro();
       }
       break;
     case SEARCH:
       if (millis() - timeSearched > 1000) {
         timeSearched = millis();
         locate_state = SCAN;
-		sensors.enableGyro();
+        sensor.enableGyro();
       } else {
-		  locate_state = SEARCH;
-	  }
-	  break;
-    case RECORD:
-	  if (sensor.getAngle() > 360 || firesLeft == firesRecorded)
-        locate_state = REPOSITION;
-      } else { 
-		locate_state = SCAN;
+        locate_state = SEARCH;
       }
       break;
-    case REPOSITION:
-      if (locateFinished == true) {
-		  locate_state = SCAN;
-		  sensors.disableGyro();
-	  }
-      break;
-  }
-
-  // State output logic
-  switch(locate_state) {
-    case SCAN:
-      scan();
-      break;
-    case SEARCH:
-      search();
-      break;
     case RECORD:
-      record();
-      break;
-    case REPOSITION:
-      reposition();
-      break;
+      if (sensor.getAngle() > 360 || firesLeft == firesRecorded)
+      {
+        locate_state = REPOSITION;
+  } else {
+    locate_state = SCAN;
   }
+  break;
+case REPOSITION:
+  if (locateFinished == true) {
+    locate_state = SCAN;
+    sensor.disableGyro();
+  }
+  break;
+}
+
+// State output logic
+switch (locate_state) {
+case SCAN:
+  scan();
+  break;
+case SEARCH:
+  search();
+  break;
+case RECORD:
+  record();
+  break;
+case REPOSITION:
+  reposition();
+  break;
+}
 }
 
 void scan() {
   //rotate CW
-  motor.desiredControl(0,0,90);
+  motor.desiredControl(0, 0, 90);
 }
 
 void search() {
   //move forward
-  motor.desiredControl(500,0,0);
+  motor.desiredControl(500, 0, 0);
 }
 
 void record() {
   // continues to turn until fire is no longer seen on the photoresistor
   firesRecorded++;
-  if (sensor.getPhoto(2) > maxPhotoDetected){
+  if (sensor.getPhoto(2) > maxPhotoDetected) {
     maxPhotoDetected = sensor.getPhoto(2);//record photoresistor value
-  } 
+  }
 }
 
-void reposition() { 
+void reposition() {
   // rotate CW until find max photoresistor position
-    if (sensor.getPhoto(2) > (maxPhotoDetected - DETECTION_THR)){
-       motor.desiredControl(0,0,0);
-       locateFinished = true;
-    } else { 
-      motor.desiredControl(0,0,90); 
-    }
+  if (sensor.getPhoto(2) > (maxPhotoDetected - DETECTION_THR)) {
+    motor.desiredControl(0, 0, 0);
+    locateFinished = true;
+  } else {
+    motor.desiredControl(0, 0, 90);
+  }
 }
 
 //-------Halt---------
 void halt_command() {
-  motor.desiredControl(0,0,0);
+  motor.desiredControl(0, 0, 0);
   //flash a LED to be cool
   slow_flash_LED_builtin();
   fast_flash_double_LED_builtin();
@@ -256,23 +257,23 @@ void halt_command() {
 }
 
 //-------Extinguish---------
-void extinguish_command(){
+void extinguish_command() {
   //entering: timestamp, turn fan on, and stop moving
   if (first = false) {
-    motor.desiredControl(0,0,0);
+    motor.desiredControl(0, 0, 0);
     motor.controlFan(true);
-    
+
     updateFanMillis = millis;
     first = true;
   }
 
-  if ((millis() - updateFanMillis > FANRUNTIME) && ((!sensor.getDetected(2) || !sensor.getDetected(3)))){//Extingush for at least 10 seconds and until fire is no longer detected.
+  if ((millis() - updateFanMillis > FANRUNTIME) && ((!sensor.getDetected(2) || !sensor.getDetected(3)))) { //Extingush for at least 10 seconds and until fire is no longer detected.
     motor.controlFan(false);
     firesLeft--;
     updateFanMillis = millis();
-    first=false;
-    
-  } 
+    first = false;
+
+  }
 }
 
 //-------Avoid---------
@@ -282,12 +283,12 @@ void avoid_command() {
   front = moveToFireFuzzy.setCrispInput('front', sensor.getZoneScore('front')); // connects sensors to fuzzy input
   left = moveToFireFuzzy.setCrispInput('left', sensor.getZoneScore('left'));    // connects sensors to fuzzy input
   right = moveToFireFuzzy.setCrispInput('right', sensor.getZoneScore('right')); // connects sensors to fuzzy input
-  if (front && left && right){// boolean return check if inputs are successfully connected
+  if (front && left && right) { // boolean return check if inputs are successfully connected
     avoidFuzzy.updateFuzzy();
     Xnorm = moveToFireFuzzy.getOutputValue('X');  // num between -1 - 1
     Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between -1 - 1
     // scale to motor range of +- 500 and input to motor
-    motor.desiredControl(Xnorm*500, Ynorm*500,0); 
+    motor.desiredControl(Xnorm * 500, Ynorm * 500, 0);
   }
 }
 
@@ -297,12 +298,12 @@ void moveToFire_command() {
   double Ynorm, Znorm = 0;
   arcPosition = moveToFireFuzzy.setCrispInput('arcPosition', sensor.getNormPhotoArc()); // connects sensors to fuzzy input
   intensity = moveToFireFuzzy.setCrispInput('intensity', sensor.getMaxPhoto());         // connects sensors to fuzzy input
-  if (arcPosition && intensity){ // boolean return check if inputs are successfully connected
+  if (arcPosition && intensity) { // boolean return check if inputs are successfully connected
     moveToFireFuzzy.updateFuzzy();
     Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between  0 - 1
     Znorm = moveToFireFuzzy.getOutputValue('Z');  // num between -1 - 1
     // scale to motor range of +- 500 and input to motor
-    motor.desiredControl(0, Ynorm*500, Znorm*500); 
+    motor.desiredControl(0, Ynorm * 500, Znorm * 500);
   }
 }
 
@@ -403,4 +404,4 @@ bool is_battery_voltage_OK()
     else
       return true;
   }
-  }
+}

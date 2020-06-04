@@ -77,6 +77,7 @@ private:
 	//Gryo
 	bool gyroState;
 	float Angle; // angle positive if rotated clockwise
+	int updateAngleMillis;
 
 	//Distance
 	uint16_t Distances[5]; 

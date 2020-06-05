@@ -7,7 +7,7 @@ class FuzzyMember{
 public:
     // Constructors
     FuzzyMember();
-    FuzzyMember(char* name, float a, float b, float c, float d); // set the points for the set
+    FuzzyMember(char* name, int min, int max, float a, float b, float c, float d); // set the points for the set
 
     // Destructors
     ~FuzzyMember();

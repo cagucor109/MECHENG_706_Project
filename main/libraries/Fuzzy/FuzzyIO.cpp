@@ -116,6 +116,11 @@ FuzzyO::~FuzzyO(){
 
 }
 
+// Getters
+float FuzzyO::getOutputValue(){
+    return _outputValue;
+}
+
 // Public Methods
 bool FuzzyO::calculateOutput(){
     
@@ -128,8 +133,8 @@ bool FuzzyO::calculateOutput(){
     float averageHeight;
     float centroidValue;
 
-    float sumArea = 0;
-    float sumWeightedArea = 0;
+    float sumArea = 0.0;
+    float sumWeightedArea = 0.0;
 
     // TODO: Calculate area under combined shape
     for(int i = 0; i < _xPointsFinal.size() - 1; i++){
@@ -151,6 +156,8 @@ bool FuzzyO::calculateOutput(){
     }
     
     _outputValue = sumWeightedArea / sumArea;
+
+    return true;
 }
 
 // Private Methods

@@ -2,13 +2,14 @@
 #define FUZZYIO_H
 
 #include "FuzzyMember.h"
+#include "FuzzyMember.cpp"
 #include "Arduino.h"
 #include "LinkedList.h"
 
 #define SEPARATOR -2 // separates points not joined by lines
 
 class FuzzyIO{
-    public:
+public:
     // Constructors
     FuzzyIO();
     FuzzyIO(char* name);
@@ -65,6 +66,9 @@ public:
 
     // Destructors
     ~FuzzyO();
+
+    // Getters
+    float getOutputValue();
 
     // Public Methods
     bool calculateOutput(); // centroid method

@@ -2,9 +2,10 @@
 #define FUZZYRULES_H
 
 #include "FuzzyIO.h"
-#include "FuzzyMember.h"
 #include "Arduino.h"
 
+class Antecedent;
+class Consequent;
 
 class FuzzyRules{
 public:
@@ -54,7 +55,7 @@ public:
     
 private:
     LinkedList<FuzzyMember*> _consequentMembers; // fuzzy member
-    LinkedList<FuzzyI*> _consequentOutputs; // fuzzy output
+    LinkedList<FuzzyO*> _consequentOutputs; // fuzzy output
 };
 
 #endif

@@ -52,8 +52,8 @@ float Antecedent::evaluateAntecedent(){
     int index;
 
     for(int i = 0; i < _antecedentInputs.size(); i++){
-        index = (*_antecedentInputs.at(i)).findNamedMember( (*_antecedentMembers.at(i)).getName() );
-        tempTruth = (*(*_antecedentInputs.at(i)).getFuzzyMember(index)).getPertinence();
+        index = (*_antecedentInputs.get(i)).findNamedMember( (*_antecedentMembers.get(i)).getName() );
+        tempTruth = (*(*_antecedentInputs.get(i)).getFuzzyMember(index)).getPertinence();
 
         // apply min function
         if(tempTruth < truth){
@@ -77,10 +77,10 @@ Consequent::~Consequent(){
 }
 
 // Public Methods
-bool Consequent::makeConsequent(FuzzyO* output, FuzzyMember* member){
+bool Consequent::addConsequent(FuzzyO* output, FuzzyMember* member){
 
     _consequentMembers.add(member); 
-    _consequentOutput.add(output);
+    _consequentOutputs.add(output);
 }
 
 bool Consequent::evaluateConsequent(float antecedentTruth){

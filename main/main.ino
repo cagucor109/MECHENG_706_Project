@@ -285,8 +285,8 @@ void avoid_command() {
   right = moveToFireFuzzy.setCrispInput('right', sensor.getZoneScore('right')); // connects sensors to fuzzy input
   if (front && left && right) { // boolean return check if inputs are successfully connected
     avoidFuzzy.updateFuzzy();
-    Xnorm = moveToFireFuzzy.getOutputValue('X');  // num between -1 - 1
-    Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between -1 - 1
+    Xnorm = moveToFireFuzzy.getCrispOutput('X');  // num between -1 - 1
+    Ynorm = moveToFireFuzzy.getCrispOutput('Y');  // num between -1 - 1
     // scale to motor range of +- 500 and input to motor
     motor.desiredControl(Xnorm * 500, Ynorm * 500, 0);
   }
@@ -300,8 +300,8 @@ void moveToFire_command() {
   intensity = moveToFireFuzzy.setCrispInput('intensity', sensor.getMaxPhoto());         // connects sensors to fuzzy input
   if (arcPosition && intensity) { // boolean return check if inputs are successfully connected
     moveToFireFuzzy.updateFuzzy();
-    Ynorm = moveToFireFuzzy.getOutputValue('Y');  // num between  0 - 1
-    Znorm = moveToFireFuzzy.getOutputValue('Z');  // num between -1 - 1
+    Ynorm = moveToFireFuzzy.getCrispOutput('Y');  // num between  0 - 1
+    Znorm = moveToFireFuzzy.getCrispOutput('Z');  // num between -1 - 1
     // scale to motor range of +- 500 and input to motor
     motor.desiredControl(0, Ynorm * 500, Znorm * 500);
   }

@@ -1,10 +1,11 @@
 #ifndef FUZZY_H
 #define FUZZY_H
 
-#include "FuzzyIO.h"
 #include "Arduino.h"
-#include "FuzzyMember.h"
+#include "FuzzyIO.h"
+#include "FuzzyIO.cpp"
 #include "FuzzyRules.h"
+#include "FuzzyRules.cpp"
 
 class Fuzzy{
 public:
@@ -16,7 +17,7 @@ public:
     ~Fuzzy();
     
     // Getters
-    float getOutputValue(char* outputName);
+    float getCrispOutput(char* outputName);
 
     // Public Methods
     bool addRuleSet(FuzzyRules* ruleSet);  

@@ -25,7 +25,7 @@
 #define PHOTO_CENTER_OFFSET 100
 #define PHOTO_HALF_VIEW_ANGLE PHOTO_VIEW_ANGLE/2 //This might be incorrect
 
-#include "Kalman\Kalman.h"
+
 #include "Kalman\Kalman.cpp"
 #include "Arduino.h"
 #include <math.h>

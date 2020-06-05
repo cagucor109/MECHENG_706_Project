@@ -14,11 +14,8 @@
 
 //----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
 // include libraries
-#include "libraries\Sensors\Sensors.h"
 #include "libraries\Sensors\Sensors.cpp"
-#include "libraries\Motors\Motors.h"
 #include "libraries\Motors\Motors.cpp"
-#include "libraries\Fuzzy\Fuzzy.h"
 #include "libraries\Fuzzy\Fuzzy.cpp"
 
 //Initializing global objects

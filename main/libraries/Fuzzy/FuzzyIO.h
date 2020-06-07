@@ -12,12 +12,14 @@ class FuzzyIO{
 public:
     // Constructors
     FuzzyIO();
-    FuzzyIO(char* name);
+    FuzzyIO(char* name, int minX, int maxX);
 
     // Destructors
     ~FuzzyIO();
 
     // Getters
+    int getMaxX();
+    int getMinX();
     char* listMembers();
     char* getName();
     int findNamedMember(char* name); // return index of named fuzzy member, -1 if not found
@@ -29,6 +31,8 @@ public:
 
 protected:
     LinkedList<FuzzyMember*> _fuzzyMembers;
+    int _max_X; // maximum value for x axis in member function
+    int _min_X; // minimum value for x axis in member function
     int _numLines;
     char _name[8];
     char _names[32];
@@ -38,7 +42,7 @@ class FuzzyI : public FuzzyIO{
 public:
     // Constructors
     FuzzyI();
-    FuzzyI(char* name);
+    FuzzyI(char* name, int minX, int maxX);
 
     // Destructors
     ~FuzzyI();
@@ -62,7 +66,7 @@ class FuzzyO : public FuzzyIO{
 public:
     // Constructors
     FuzzyO();
-    FuzzyO(char* name);
+    FuzzyO(char* name, int minX, int maxX);
 
     // Destructors
     ~FuzzyO();
@@ -85,6 +89,7 @@ private:
     // Private Methods
     void generatePoints(); // create raw points based on member function and truth value
     void processPoints(); // populates the final points based on intersections
+    bool combineIntersect(LinkedList<float> xRaw, LinkedList<float> yRaw, LinkedList<float> xIntercepts, LinkedList<float> yIntercepts); // checks if the first shape contains the second
     bool linesIntersect(float &xout, float &yout, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4); // find point of intersection of two lines (0,-1) means no intersection
 
 };

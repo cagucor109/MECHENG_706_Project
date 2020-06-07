@@ -2,17 +2,7 @@
     
 // Constructors
 Fuzzy::Fuzzy(){
-    FuzzyI *testI = new FuzzyI("test");
-    FuzzyMember *testIM = new FuzzyMember();
-    (*testI).addMember(testIM);
 
-    addFuzzyInput(testI);
-
-    FuzzyO *testO = new FuzzyO("test");
-    FuzzyMember *testOM = new FuzzyMember();
-    (*testO).addMember(testOM);
-
-    addFuzzyOutput(testO);
 }
 
 Fuzzy::Fuzzy(int preDef){
@@ -20,37 +10,41 @@ Fuzzy::Fuzzy(int preDef){
 
         // ------------------- Inputs ----------------------- //
 
-        FuzzyI *arcPosition = new FuzzyI("arcPosition");
-        FuzzyMember *left_ap = new FuzzyMember("left", -1, 1, -0.8, -0.8, -0.8, 0.0);
+        FuzzyI *arcPosition = new FuzzyI("arcPosition", -1, 1);
+        FuzzyMember *left_ap = new FuzzyMember("left", -0.8, -0.8, -0.8, 0.0);
         (*arcPosition).addMember(left_ap);
-        FuzzyMember *front_ap = new FuzzyMember("front", -1, 1, -1.0, -0.2, 0.2, 1.0);
+        FuzzyMember *front_ap = new FuzzyMember("front", -1.0, -0.2, 0.2, 1.0);
         (*arcPosition).addMember(front_ap);
-        FuzzyMember * right_ap = new FuzzyMember("right", -1, 1, 0.0, 0.8, 0.8, 0.8);
+        FuzzyMember * right_ap = new FuzzyMember("right", 0.0, 0.8, 0.8, 0.8);
         (*arcPosition).addMember(right_ap);
+        addFuzzyInput(arcPosition);
 
-        FuzzyI *intensity = new FuzzyI("intensity");
-        FuzzyMember *far_i = new FuzzyMember("far", 0, 1, 0.0, 0.0, 0.0, 0.6);
+        FuzzyI *intensity = new FuzzyI("intensity", 0, 1);
+        FuzzyMember *far_i = new FuzzyMember("far", 0.0, 0.0, 0.0, 0.6);
         (*intensity).addMember(far_i);
-        FuzzyMember *close_i = new FuzzyMember("close", 0, 1, 0.3, 1.0, 1.0, 1.0);
+        FuzzyMember *close_i = new FuzzyMember("close", 0.3, 1.0, 1.0, 1.0);
         (*intensity).addMember(close_i);
-        FuzzyMember *medium_i = new FuzzyMember("medium", 0, 1, 0.1, 0.28, 0.37, 1.0);
+        FuzzyMember *medium_i = new FuzzyMember("medium", 0.1, 0.28, 0.37, 1.0);
         (*intensity).addMember(medium_i);
+        addFuzzyInput(intensity);
 
         // ---------------------- Outputs -------------------- //
 
-        FuzzyO *Y = new FuzzyO("Y");
-        FuzzyMember *slow_y = new FuzzyMember("slow", 0, 1, 0.2, 0.2, 0.2, 0.7);
+        FuzzyO *Y = new FuzzyO("Y", 0, 1);
+        FuzzyMember *slow_y = new FuzzyMember("slow", 0.2, 0.2, 0.2, 0.7);
         (*Y).addMember(slow_y);
-        FuzzyMember *medium_y = new FuzzyMember("medium", 0, 1, 0.0, 0.5, 0.69, 0.7);
+        FuzzyMember *medium_y = new FuzzyMember("medium", 0.0, 0.5, 0.69, 0.7);
         (*Y).addMember(medium_y);
-        FuzzyMember *fast_y = new FuzzyMember("fast", 0, 1, 0.3, 0.7, 0.7, 0.7);
+        FuzzyMember *fast_y = new FuzzyMember("fast", 0.3, 0.7, 0.7, 0.7);
         (*Y).addMember(fast_y);
+        addFuzzyOutput(Y);
 
-        FuzzyO *Z = new FuzzyO("Z");
-        FuzzyMember *ccw_z = new FuzzyMember("ccw", -1, 1, -0.8, -0.8, -0.8, 0.0);
+        FuzzyO *Z = new FuzzyO("Z", -1, 1);
+        FuzzyMember *ccw_z = new FuzzyMember("ccw", -0.8, -0.8, -0.8, 0.0);
         (*Z).addMember(ccw_z);
-        FuzzyMember *cw_z = new FuzzyMember("cw", -1, 1, 0.0, 0.7, 0.7, 0.7);
+        FuzzyMember *cw_z = new FuzzyMember("cw", 0.0, 0.7, 0.7, 0.7);
         (*Z).addMember(cw_z);
+        addFuzzyOutput(Z);
 
         // ----------------------- Rules ---------------------- //
 
@@ -58,47 +52,52 @@ Fuzzy::Fuzzy(int preDef){
 
         // ------------------- Inputs ----------------------- //
 
-        FuzzyI *front = new FuzzyI("front");
-        FuzzyMember *close_f = new FuzzyMember("close", 0, 1, 0.0, 0.1, 0.3, 0.4);
+        FuzzyI *front = new FuzzyI("front", 0, 1);
+        FuzzyMember *close_f = new FuzzyMember("close", 0.0, 0.1, 0.3, 0.4);
         (*front).addMember(close_f);
-        FuzzyMember *far_f = new FuzzyMember("far", 0, 1, 0.2, 0.6, 0.6, 0.6);
+        FuzzyMember *far_f = new FuzzyMember("far", 0.2, 0.6, 0.6, 0.6);
         (*front).addMember(far_f);
-        FuzzyMember *critical_f = new FuzzyMember("critical", 0, 1, 0.1, 0.1, 0.1, 0.2);
+        FuzzyMember *critical_f = new FuzzyMember("critical", 0.1, 0.1, 0.1, 0.2);
         (*front).addMember(critical_f);
+        addFuzzyInput(front);
 
-        FuzzyI *left = new FuzzyI("left");
-        FuzzyMember *critical_l = new FuzzyMember("critical", 0, 1, 0.1, 0.1, 0.1, 0.2);
+        FuzzyI *left = new FuzzyI("left", 0, 1);
+        FuzzyMember *critical_l = new FuzzyMember("critical", 0.1, 0.1, 0.1, 0.2);
         (*left).addMember(critical_l);
-        FuzzyMember *close_l = new FuzzyMember("close", 0, 1, 0.0, 0.1, 0.2, 0.5);
+        FuzzyMember *close_l = new FuzzyMember("close", 0.0, 0.1, 0.2, 0.5);
         (*left).addMember(close_l);
-        FuzzyMember *far_l = new FuzzyMember("far", 0, 1, 0.2, 0.3, 0.3, 0.3);
+        FuzzyMember *far_l = new FuzzyMember("far", 0.2, 0.3, 0.3, 0.3);
         (*left).addMember(far_l);
+        addFuzzyInput(left);
 
-        FuzzyI *right = new FuzzyI("right");
-        FuzzyMember *critical_r = new FuzzyMember("critical", 0, 1, 0.1, 0.1, 0.1, 0.2);
+        FuzzyI *right = new FuzzyI("right", 0, 1);
+        FuzzyMember *critical_r = new FuzzyMember("critical", 0.1, 0.1, 0.1, 0.2);
         (*right).addMember(critical_r);
-        FuzzyMember *close_r = new FuzzyMember("close", 0, 1, 0.0, 0.1, 0.2, 0.5);
+        FuzzyMember *close_r = new FuzzyMember("close", 0.0, 0.1, 0.2, 0.5);
         (*right).addMember(close_r);
-        FuzzyMember *far_r = new FuzzyMember("far", 0, 1, 0.2, 0.3, 0.3, 0.3);
+        FuzzyMember *far_r = new FuzzyMember("far", 0.2, 0.3, 0.3, 0.3);
         (*right).addMember(far_r);
+        addFuzzyInput(right);
 
         // ---------------------- Outputs -------------------- //
 
-        FuzzyO *X = new FuzzyO("X");
-        FuzzyMember *left_x = new FuzzyMember("left", -1, 1, -0.8, -0.8, -0.8, 0.0);
+        FuzzyO *X = new FuzzyO("X", -1, 1);
+        FuzzyMember *left_x = new FuzzyMember("left", -0.8, -0.8, -0.8, 0.0);
         (*X).addMember(left_x);
-        FuzzyMember *centre_x = new FuzzyMember("centre", -1, 1, -0.8, 0.0, 0.0, 0.8);
+        FuzzyMember *centre_x = new FuzzyMember("centre", -0.8, 0.0, 0.0, 0.8);
         (*X).addMember(centre_x);
-        FuzzyMember *right_x = new FuzzyMember("right", -1, 1, 0.0, 0.8, 0.8, 0.8);
+        FuzzyMember *right_x = new FuzzyMember("right", 0.0, 0.8, 0.8, 0.8);
         (*X).addMember(right_x);
+        addFuzzyOutput(X);
         
-        FuzzyO *Y = new FuzzyO("Y");
-        FuzzyMember *back_y = new FuzzyMember("back", -1, 1, -0.8, -0.8, -0.8, 0.4);
+        FuzzyO *Y = new FuzzyO("Y", -1, 1);
+        FuzzyMember *back_y = new FuzzyMember("back", -0.8, -0.8, -0.8, 0.4);
         (*Y).addMember(back_y);
-        FuzzyMember *slow_y = new FuzzyMember("slow", -1, 1, -0.4, 0.6, 0.6, 0.6);
+        FuzzyMember *slow_y = new FuzzyMember("slow", -0.4, 0.6, 0.6, 0.6);
         (*Y).addMember(slow_y);
-        FuzzyMember *stop_y = new FuzzyMember("stop", -1, 1, -0.2, -0.1, 0.1, 0.2);
+        FuzzyMember *stop_y = new FuzzyMember("stop", -0.2, -0.1, 0.1, 0.2);
         (*Y).addMember(stop_y);
+        addFuzzyOutput(Y);
 
         // ----------------------- Rules ---------------------- //
         

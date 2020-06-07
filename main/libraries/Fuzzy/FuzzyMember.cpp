@@ -6,10 +6,8 @@ FuzzyMember::FuzzyMember(){
 
 }
 
-FuzzyMember::FuzzyMember(char name[8], int min, int max, float a, float b, float c, float d){
+FuzzyMember::FuzzyMember(char name[8], float a, float b, float c, float d){
     strcpy(_name, name);
-    _min_X = min;
-    _max_X = max;
     _a = a;
     _b = b;
     _c = c;
@@ -24,14 +22,6 @@ FuzzyMember::~FuzzyMember(){
 }
 
 // Getters
-
-int FuzzyMember::getMaxX(){
-    return _max_X;
-}
-
-int FuzzyMember::getMinX(){
-    return _min_X;
-}
 
 float FuzzyMember::getVertexA(){
     return _a;

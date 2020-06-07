@@ -7,14 +7,12 @@ class FuzzyMember{
 public:
     // Constructors
     FuzzyMember();
-    FuzzyMember(char* name, int min, int max, float a, float b, float c, float d); // set the points for the set
+    FuzzyMember(char* name, float a, float b, float c, float d); // set the points for the set
 
     // Destructors
     ~FuzzyMember();
 
     // Getters
-    int getMaxX();
-    int getMinX();
     float getVertexA();
     float getVertexB();
     float getVertexC();
@@ -31,8 +29,6 @@ public:
     void resetPertinence();
 
 private:
-    int _max_X; // maximum value for x axis in member function
-    int _min_X; // minimum value for x axis in member function
     float _a, _b, _c, _d; // Vertices of membership function
     float _pertinence; // for input fuzzy members
     float _truthLevel; // for output fuzzy members

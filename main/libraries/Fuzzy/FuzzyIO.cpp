@@ -7,8 +7,10 @@ FuzzyIO::FuzzyIO(){
 
 }
 
-FuzzyIO::FuzzyIO(char* name){
+FuzzyIO::FuzzyIO(char* name, int minX, int maxX){
     strcpy(_name, name);
+    _max_X = maxX;
+    _min_X = minX;
 }
 
 // Destructors
@@ -21,6 +23,14 @@ FuzzyIO::~FuzzyIO(){
 }
 
 // Getters
+int FuzzyIO::getMaxX(){
+    return _max_X;
+}
+
+int FuzzyIO::getMinX(){
+    return _min_X;
+}
+
 char* FuzzyIO::listMembers(){
 
     strcpy(_names, "");
@@ -67,7 +77,7 @@ FuzzyI::FuzzyI() : FuzzyIO(){
 
 }
 
-FuzzyI::FuzzyI(char* name) : FuzzyIO(name){
+FuzzyI::FuzzyI(char* name, int minX, int maxX) : FuzzyIO(name, minX, maxX){
 
 }
 
@@ -107,7 +117,7 @@ FuzzyO::FuzzyO(){
 
 }
 
-FuzzyO::FuzzyO(char* name) : FuzzyIO(name){
+FuzzyO::FuzzyO(char* name, int minX, int maxX) : FuzzyIO(name, minX, maxX){
 
 }
 
@@ -175,7 +185,7 @@ void FuzzyO::generatePoints(){
     float tempX;
     float tempY;
 
-    float a, b, c, d, minX, maxX, truth;
+    float a, b, c, d, truth;
 
     // map all points into cartesian coordinates starting from left side
     for(int i = 0; i < _fuzzyMembers.size(); i++){
@@ -185,19 +195,16 @@ void FuzzyO::generatePoints(){
         c = (*_fuzzyMembers.get(i)).getVertexA();
         d = (*_fuzzyMembers.get(i)).getVertexA();
 
-        minX = (*_fuzzyMembers.get(i)).getMinX();
-        maxX = (*_fuzzyMembers.get(i)).getMaxX();
-
         truth = (*_fuzzyMembers.get(i)).getTruthLevel();
 
         // if the function's left is all 1
         if( a == b && b == c ){
-            _xPointsRaw.add( minX );
+            _xPointsRaw.add( _min_X );
             _yPointsRaw.add( truth );
 
             _numLines++;
 
-            linesIntersect(tempX, tempY, c, 1, d, 0, minX, truth, maxX, truth);
+            linesIntersect(tempX, tempY, c, 1, d, 0, _min_X, truth, _max_X, truth);
 
             _xPointsRaw.add(tempX);
             _yPointsRaw.add(tempY);
@@ -217,14 +224,14 @@ void FuzzyO::generatePoints(){
 
             _numLines++;
 
-            linesIntersect(tempX, tempY, a, 0, b, 1, minX, truth, maxX, truth);
+            linesIntersect(tempX, tempY, a, 0, b, 1, _min_X, truth, _max_X, truth);
 
             _xPointsRaw.add(tempX);
             _yPointsRaw.add(tempY);
 
             _numLines++;
 
-            _xPointsRaw.add(maxX);
+            _xPointsRaw.add(_max_X);
             _yPointsRaw.add(truth);
 
             _numLines++;
@@ -237,14 +244,14 @@ void FuzzyO::generatePoints(){
 
             _numLines++;
 
-            linesIntersect(tempX, tempY, a, 0, b, 1, minX, truth, maxX, truth);
+            linesIntersect(tempX, tempY, a, 0, b, 1, _min_X, truth, _max_X, truth);
 
             _xPointsRaw.add(tempX);
             _yPointsRaw.add(tempY);
 
             _numLines++;
 
-            linesIntersect(tempX, tempY, c, 1, d, 0, minX, truth, maxX, truth);
+            linesIntersect(tempX, tempY, c, 1, d, 0, _min_X, truth, _max_X, truth);
 
             _xPointsRaw.add(tempX);
             _yPointsRaw.add(tempY);
@@ -263,37 +270,186 @@ void FuzzyO::generatePoints(){
 }
 
 void FuzzyO::processPoints(){
-    int linesProcessed = 0;
 
-    // WARNING: COMMENTED OUT FOR PLACEHOLDER
-    // start with the first line on the processed list and build from there
-    //_xPointsFinal.get(0) = _xPointsRaw.get(0); 
-    //_yPointsFinal.get(0) = _yPointsRaw.get(0); 
+    // variables to record start indecies of second and third membership functions
+    int index2, index3;
+
+    _xPointsFinal.clear();
+    _yPointsFinal.clear();
+
+    // first, add all non intersecting membership functions
+    // start with the first membership function
+    int current = 0;
+    float largestPoint;
+    
+    // NOTE: replace initial list with -3 where a point has been processed
+    while(_xPointsFinal.get(current) != SEPARATOR){
+        _xPointsFinal.add(_xPointsRaw.get(current));
+        _xPointsRaw.set(current, -3);
+        _yPointsFinal.add(_yPointsRaw.get(current));
+        _yPointsRaw.set(current, -3);
+        current++;
+    }
+
+    index2 = current + 1;
+
+    largestPoint = _xPointsRaw.get(current - 1);
+
+    // check for non intersecting membership functions and add them
+
+    // NOTE: MAX NUMBER OF MEMBERSHIP FUNCTIONS IS 3
+
+    if(largestPoint < _xPointsRaw.get(++current)){
+        while(_xPointsFinal.get(current) != SEPARATOR){
+            _xPointsFinal.add(_xPointsRaw.get(current));
+            _xPointsRaw.set(current, -3);
+            _yPointsFinal.add(_yPointsRaw.get(current));
+            _yPointsRaw.set(current, -3);
+            current++;
+        }
+
+        index3 = current + 1;
+    }else{
+        while(_xPointsRaw.get(current) != SEPARATOR){
+            current++;
+        }
+
+        index3 = current + 1;
+
+        if(largestPoint < _xPointsRaw.get(++current)){
+            while(_xPointsFinal.get(current) != SEPARATOR){
+                _xPointsFinal.add(_xPointsRaw.get(current));
+                _yPointsRaw.set(current, -3);
+                _yPointsFinal.add(_yPointsRaw.get(current));
+                _yPointsRaw.set(current, -3);
+                current++;
+            }
+        }
+    }
+
+    // go through remaining membership functions one at a time and count intersections with current shape
+    // also record points of intersection
 
     // temp varaibles to merge lines
     float xtemp, ytemp;
+    LinkedList<float> xIntercepts, yIntercepts;
+    LinkedList<float> xRawTemp, yRawTemp; 
+    xIntercepts.add(_min_X);
+    yIntercepts.add(0);
 
-    // temp variables to reassign points when merging lines
-    float firstPointX, secondPointX, firstPointY, secondPointY;
+    // if membership function is unprocessed
+    if(_xPointsRaw.get(index2) != -3){
+        xIntercepts.clear();
+        yIntercepts.clear();
 
-    // variables to keep track of line gradients
-    float grad1, grad2; 
+        xRawTemp.clear();
+        yRawTemp.clear();
 
+        // while the membership function has not ended
+        while(_xPointsRaw.get(index2+1) != -2){
+            xRawTemp.add(_xPointsRaw.get(index2));
+            yRawTemp.add(_yPointsRaw.get(index2));
 
-    // WARNING: LOGIC NEEDS TO BE REDONE
-    // NOTE: as a place holder, output a trapeze with vertices at 0.0, 0.4, 0.6, 1.0
-    _xPointsFinal.add(0.0);
-    _xPointsFinal.add(0.4);
-    _xPointsFinal.add(0.6);
-    _xPointsFinal.add(1.0);
+            // check every line in the processed list
+            for(int i = 0; i < _xPointsFinal.size(); i++){
+                // check for an intersection
+                if(linesIntersect(xtemp, ytemp, _xPointsRaw.get(index2), _yPointsRaw.get(index2), _xPointsRaw.get(index2+1), _yPointsRaw.get(index2+1), _xPointsFinal.get(i), _yPointsFinal.get(i), _xPointsFinal.get(i+1), _yPointsFinal.get(i+1))){
+                    xIntercepts.add(xtemp);
+                    yIntercepts.add(ytemp);
 
-    _yPointsFinal.add(0.0);
-    _yPointsFinal.add(0.5);
-    _yPointsFinal.add(0.5);
-    _yPointsFinal.add(0.0);
+                    combineIntersect(xRawTemp, yRawTemp, xIntercepts, yIntercepts);
+                }
+            }   
+            index2++;
+        }
+        xIntercepts.add(_max_X);
+        yIntercepts.add(0);
+        combineIntersect(xRawTemp, yRawTemp, xIntercepts, yIntercepts);
+        
+    }if(_xPointsRaw.get(index3) != -3){
+        xIntercepts.clear();
+        yIntercepts.clear();
 
+        xRawTemp.clear();
+        yRawTemp.clear();
+
+        // while the membership function has not ended
+        while(_xPointsRaw.get(index3+1) != -2){
+            xRawTemp.add(_xPointsRaw.get(index2));
+            yRawTemp.add(_yPointsRaw.get(index2));
+
+            // check every line in the processed list
+            for(int i = 0; i < _xPointsFinal.size(); i++){
+                // check for an intersection
+                if(linesIntersect(xtemp, ytemp, _xPointsRaw.get(index3), _yPointsRaw.get(index3), _xPointsRaw.get(index3+1), _yPointsRaw.get(index3+1), _xPointsFinal.get(i), _yPointsFinal.get(i), _xPointsFinal.get(i+1), _yPointsFinal.get(i+1))){
+                    xIntercepts.add(xtemp);
+                    yIntercepts.add(ytemp);
+                   
+                    combineIntersect(xRawTemp, yRawTemp, xIntercepts, yIntercepts);
+                }
+            }   
+            index3++;
+        }
+        xIntercepts.add(_max_X);
+        yIntercepts.add(0);
+        combineIntersect(xRawTemp, yRawTemp, xIntercepts, yIntercepts);
+    }
     
+}
 
+bool FuzzyO::combineIntersect(LinkedList<float> xRaw, LinkedList<float> yRaw, LinkedList<float> xIntercepts, LinkedList<float> yIntercepts){
+    // get the last 2 intercepts 
+    float xIntCurrent = xIntercepts.get(xIntercepts.size() - 1);
+    float xIntPrev = xIntercepts.get(xIntercepts.size() - 2);
+
+    // find the max value of the raw list and final list between these two points
+    float maxRaw = 0.0;
+    float maxFinal = 0.0;
+
+    bool firstInterceptFoundFinal = false;
+    bool firstInterceptFoundRaw = false;
+    int startIndexRaw, startIndexFinal;
+
+    // find max in raw list
+    for(int i = 0; i < yRaw.size(); i++){
+        // only consider values between last 2 intercepts
+        if(xRaw.get(i) > xIntPrev && xRaw.get(i) < xIntCurrent){
+            if(!firstInterceptFoundRaw){
+                startIndexRaw = i;
+            }
+            if(yRaw.get(i) > maxRaw){
+                maxRaw = yRaw.get(i);
+            }
+        }
+    }
+
+    // find max in final list
+    for(int j = 0; j < _yPointsFinal.size(); j++){
+        if(_xPointsFinal.get(j) > xIntPrev && _xPointsFinal.get(j) < xIntCurrent){
+            // locate start of relevant points
+            if(!firstInterceptFoundFinal){
+                startIndexFinal = j;
+            }
+
+            if(_yPointsFinal.get(j) > maxFinal){
+                maxFinal = _yPointsFinal.get(j);
+            }
+        }
+    }
+
+    // identify need to replace segment of line list
+    if(maxRaw > maxFinal){
+        // first delete all points in relevant section
+        while(_xPointsFinal.get(startIndexFinal) < xIntCurrent){
+            _xPointsFinal.remove(startIndexFinal);
+        }
+
+        // next, add all points in relevant section
+        while(_xPointsRaw.get(startIndexRaw) < xIntCurrent){
+            _xPointsFinal.add(startIndexFinal, _xPointsRaw.get(startIndexRaw));
+            startIndexRaw++;
+        }
+    }
 }
 
 

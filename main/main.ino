@@ -11,7 +11,7 @@
 // obstacles and fire locations. Behaviour and fuzzy logic control are used
 // with a overarching FSM system.
 
-
+//Sensor and actuator pin allocations are defined in sensors and motors libraries respectively
 //----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
 // include libraries
 #include "libraries\Sensors\Sensors.cpp"

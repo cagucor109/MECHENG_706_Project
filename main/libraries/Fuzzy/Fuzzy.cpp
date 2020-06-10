@@ -1,10 +1,31 @@
+/*
+ *  Implementation of Fuzzy logic control
+ *  
+ *  This class provides an interface to fuzzy logic control.
+ *  To add an input, call the setCrispInput() method.
+ *  To get the output, call the getCrispOutput() method.
+ *  To run the fuuzy control process, call the updateFuzzy() method.
+ * 
+ *  The constructor which takes an integer has a predefined set of inputs, outputs and rules.
+ *  The creation of a custom set of inputs, outputs and rules can be achieved by invoking the
+ *  addRuleSet(), addInput() and addOutput() methods. For more detail on how to create these,
+ *  inspect the FuzzyIO and FuzzyRules files.
+ * 
+ *  Author: Carlos Aguilera
+ *  Contact: cagu554@aucklanduni.ac.nz
+ * 
+ */
+
 #include "Fuzzy.h"    
     
-// Constructors
+// ------------------ Constructors ------------------ //
+
+// default constructor
 Fuzzy::Fuzzy(){
 
 }
 
+// Constructor with predefined inputs, outputs and rules. 1 for moveToFire, 2 for avoidance
 Fuzzy::Fuzzy(int preDef){
     if (preDef == 1){ //moveToFire fuzzy controller
 

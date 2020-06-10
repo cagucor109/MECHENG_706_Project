@@ -1,3 +1,20 @@
+/*
+ *  Implementation of Fuzzy inputs and outputs
+ *  
+ *  These classes provides a container set for membership functions.
+ * 
+ *  The abstract class FuzzyIO provides a template for both inputs and outputs as 
+ *  containers of membership functions. 
+ *  FuzzyI provides a method for fuzzification through the method calculateAllPertinences().
+ *  FuzzyO provides a method for defuzzification through the method calculateOutput().
+ * 
+ *  The centroid method is used for defuzzifcation, achieved through the private methods of FuzzyO.
+ * 
+ *  Author: Carlos Aguilera
+ *  Contact: cagu554@aucklanduni.ac.nz
+ * 
+ */
+
 #ifndef FUZZYIO_H
 #define FUZZYIO_H
 

@@ -21,9 +21,9 @@ void Motors::enable_motors()
   left_rear_motor->attach(LEFT_REAR); 
   right_rear_motor->attach(RIGHT_REAR); 
   right_front_motor->attach(RIGHT_FRONT);
-  
+  //LOOK HERE FOR FAN PINOUT 
   pinMode(FAN_PIN, OUTPUT);
-
+  // LOOK UP FOR FAN PINOUT^^^^^
   motorsEnabled = true;
   
 }

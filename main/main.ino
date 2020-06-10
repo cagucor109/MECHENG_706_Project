@@ -191,58 +191,58 @@ void locate_command() {
     locate_state = SCAN;
   }
   break;
-case REPOSITION:
-  if (locateFinished == true) {
-    locate_state = SCAN;
-    sensor.disableGyro();
-  }
-  break;
-}
+	case REPOSITION:
+	  if (locateFinished == true) {
+		locate_state = SCAN;
+		sensor.disableGyro();
+	  }
+	  break;
+	}
 
-// State output logic
-switch (locate_state) {
-case SCAN:
-  scan();
-  break;
-case SEARCH:
-  search();
-  break;
-case RECORD:
-  record();
-  break;
-case REPOSITION:
-  reposition();
-  break;
-}
-}
+	// State output logic
+	switch (locate_state) {
+	case SCAN:
+	  scan();
+	  break;
+	case SEARCH:
+	  search();
+	  break;
+	case RECORD:
+	  record();
+	  break;
+	case REPOSITION:
+	  reposition();
+	  break;
+	}
+	}
 
-void scan() {
-  //rotate CW
-  motor.desiredControl(0, 0, 90);
-}
+	void scan() {
+	  //rotate CW
+	  motor.desiredControl(0, 0, 90);
+	}
 
-void search() {
-  //move forward
-  motor.desiredControl(500, 0, 0);
-}
+	void search() {
+	  //move forward
+	  motor.desiredControl(500, 0, 0);
+	}
 
-void record() {
-  // continues to turn until fire is no longer seen on the photoresistor
-  firesRecorded++;
-  if (sensor.getPhoto(2) > maxPhotoDetected) {
-    maxPhotoDetected = sensor.getPhoto(2);//record photoresistor value
-  }
-}
+	void record() {
+	  // continues to turn until fire is no longer seen on the photoresistor
+	  firesRecorded++;
+	  if (sensor.getPhoto(2) > maxPhotoDetected) {
+		maxPhotoDetected = sensor.getPhoto(2);//record photoresistor value
+	  }
+	}
 
-void reposition() {
-  // rotate CW until find max photoresistor position
-  if (sensor.getPhoto(2) > (maxPhotoDetected - DETECTION_THR)) {
-    motor.desiredControl(0, 0, 0);
-    locateFinished = true;
-  } else {
-    motor.desiredControl(0, 0, 90);
-  }
-}
+	void reposition() {
+	  // rotate CW until find max photoresistor position
+	  if (sensor.getPhoto(2) > (maxPhotoDetected - DETECTION_THR)) {
+		motor.desiredControl(0, 0, 0);
+		locateFinished = true;
+	  } else {
+		motor.desiredControl(0, 0, 90);
+	  }
+	}
 
 //-------Halt---------
 void halt_command() {

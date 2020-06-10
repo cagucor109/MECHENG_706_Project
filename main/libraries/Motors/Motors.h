@@ -7,11 +7,12 @@
 #define MAXPOWER 500 //change this to make the robot go faster, valid range is 0 to 800
 #define ZERO_OFFSET 1500 //Zero value of servo motors
 
+// PINOUT LOCATIONS FOR ARDUINO MEGA BOARD
 #define LEFT_FRONT 46
 #define LEFT_REAR 47
 #define RIGHT_FRONT 51 
 #define RIGHT_REAR 50
-#define FAN_PIN 53 //update
+#define FAN_PIN 53 
 
 
 
@@ -20,8 +21,8 @@ class Motors {
 
     //constructor
     Motors();
-    //getters
-	void desiredControl(double x_controlEffort, double y_controlEffort, double rotateControl);
+    //setters
+    void desiredControl(double x_controlEffort, double y_controlEffort, double rotateControl);
 
     //utilities
     void disable_motors();

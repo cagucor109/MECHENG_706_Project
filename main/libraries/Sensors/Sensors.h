@@ -1,6 +1,6 @@
 #ifndef SENSORS_H
 #define SENSORS_H
-
+// PINOUT LOCATIONS BELOW
 #define IR_LEFT_SIDE_PIN 59 //A5
 #define IR_RIGHT_SIDE_PIN  58//A4
 #define IR_LEFT_FORWARD_PIN 63 //A9
@@ -24,7 +24,7 @@
 #define PHOTO_VIEW_ANGLE 50
 #define PHOTO_CENTER_OFFSET 100
 #define PHOTO_HALF_VIEW_ANGLE PHOTO_VIEW_ANGLE/2 //This might be incorrect
-
+// PINOUT LOCATIONS ABOVE^^^^^^
 
 #include "Kalman\Kalman.cpp"
 #include "Arduino.h"

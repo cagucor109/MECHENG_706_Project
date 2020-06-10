@@ -12,6 +12,7 @@
 // with a overarching FSM system.
 
 //Sensor and actuator pin allocations are defined in sensors and motors libraries respectively
+
 //----------------------Libraries------------------------------------------------------------------------------------------------------------------------------------------
 // include libraries
 #include "libraries\Sensors\Sensors.cpp"
@@ -49,28 +50,15 @@ bool first = false; //first time entering extinguish state
 int updateFanMillis = 0;
 float firstFire = 0;
 
-// Enum for motion states
-enum MOTION {
-  FORWARD,
-  BACKWARD,
-  STRAFE_LEFT,
-  STRAFE_RIGHT,
-  LEFT_TURN,
-  RIGHT_TURN,
-  LEFT_ARC,
-  RIGHT_ARC,
-  BACKWARD_LEFT_TURN,
-  STOP,
-};
-
-enum LOCATE {
+// These are the locateFSM state
+enum LOCATE {  
   SCAN,
   SEARCH,
   RECORD,
   REPOSITION
 };
 
-LOCATE locate_state = SCAN;//Initialising locate FSM
+LOCATE locate_state = SCAN; //Initialising locate FSM
 
 
 //----------------------Main loop------------------------------------------------------------------------------------------------------------------------------------------
@@ -80,9 +68,10 @@ void setup() {
 void loop() {
   // the main loop updates sensors then selects the behaviour
   // based on the sensor inputs and sends them to the motors.
-  sensor.updateArcAngle();  // this is for moveToFire
-  sensor.updateGyro(); // locate FSM gyro update
-  sensor.checkZones();      // this is for Avoid
+  sensor.updateArcAngle();  	// this is for moveToFire
+  sensor.updateGyro(); 		// locate FSM gyro update
+  sensor.checkZones();      	// this is for Avoid
+	
   Suppressor();
   motor.powerMotors();
 }
@@ -90,9 +79,10 @@ void loop() {
 
 //----------------------Behaviour Selection--------------------------------------------------------------------------------------------------------------------------------
 void Suppressor() {
-  // This function calls sensing functions to evaluates which command to output to motors
-
-  // highest priority
+  // This function suppresses behaviours depending on
+  // which flags are active
+	
+  // highest priority first
   if (halt_output_flag() == 1) {
     halt_command();
   } else if (extinguish_output_flag() == 1) {
@@ -117,6 +107,7 @@ bool halt_output_flag() {
 }
 
 bool extinguish_output_flag() {
+// Checks if the fire center of the robot and fire are within 200 mm of each other.
   if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD) {
     if (sensor.getZoneScore('front') < FIREDISTANCE) {
       return true;
@@ -126,9 +117,9 @@ bool extinguish_output_flag() {
 }
 
 bool avoid_output_flag() {
-  // if there is an obstacle infront
+  // Checks for obstacles
   if (sensor.getZoneScore('front') < OBSTACLETHRESHOLD) {
-    // if fire brightly infront and centreish
+    // Suppresses avoid behaviour if there is a fire centered and infront of robot
     if (abs(sensor.getPhotoArcAngle()) < ARCTHRESHOLD && sensor.getMaxPhoto() > INTENSITYTHRESHOLD) {
       return false;
     }
@@ -138,11 +129,7 @@ bool avoid_output_flag() {
 }
 
 bool moveToFire_output_flag() {
-  // some of this is for locate because it doesnt have a flag function
-  // locatefinished is used to check that locate is finished before moving
-  // to moveToFire behaviour. It is set when we have finished repositioning to
-  // the largest phototransistor reading and is also reset when moving to fire
-  // for the next time we enter that state/behaviour.
+  // locatefinished is used ensure that robots heading is centered on fire.
   if ((locateFinished == true) && (sensor.isDetected())) { //Only move to fire when locate is complete
     return true;
   }
@@ -227,15 +214,15 @@ void locate_command() {
 	}
 
 	void record() {
-	  // continues to turn until fire is no longer seen on the photoresistor
+	  // continues to turn until fire is no longer seen on the phototransistors
 	  firesRecorded++;
 	  if (sensor.getPhoto(2) > maxPhotoDetected) {
-		maxPhotoDetected = sensor.getPhoto(2);//record photoresistor value
+		maxPhotoDetected = sensor.getPhoto(2);//record phototransistors value
 	  }
 	}
 
 	void reposition() {
-	  // rotate CW until find max photoresistor position
+	  // rotate CW until find max phototransistors position
 	  if (sensor.getPhoto(2) > (maxPhotoDetected - DETECTION_THR)) {
 		motor.desiredControl(0, 0, 0);
 		locateFinished = true;
@@ -255,7 +242,7 @@ void halt_command() {
 
 //-------Extinguish---------
 void extinguish_command() {
-  //entering: timestamp, turn fan on, and stop moving
+  //upon entering: timestamp, turn fan on, and stop moving
   if (first = false) {
     motor.desiredControl(0, 0, 0);
     motor.controlFan(true);
@@ -263,8 +250,9 @@ void extinguish_command() {
     updateFanMillis = millis;
     first = true;
   }
-
-  if ((millis() - updateFanMillis > FANRUNTIME) && ((!sensor.getDetected(2) || !sensor.getDetected(3)))) { //Extingush for at least 10 seconds and until fire is no longer detected.
+	
+//Extingush for at least 10 seconds and until fire is no longer detected.
+  if ((millis() - updateFanMillis > FANRUNTIME) && ((!sensor.getDetected(2) || !sensor.getDetected(3)))) { 
     motor.controlFan(false);
     firesLeft--;
     updateFanMillis = millis();
@@ -275,6 +263,7 @@ void extinguish_command() {
 
 //-------Avoid---------
 void avoid_command() {
+// avoid behaviour output function using fuzzy logic controller
   bool front, left, right;
   double Xnorm, Ynorm = 0;
   front = moveToFireFuzzy.setCrispInput('front', sensor.getZoneScore('front')); // connects sensors to fuzzy input
@@ -291,6 +280,7 @@ void avoid_command() {
 
 //-------Move to Fire---------
 void moveToFire_command() {
+// move to fire output behaviour function using fuzzy logic controller
   bool arcPosition, intensity;
   double Ynorm, Znorm = 0;
   arcPosition = moveToFireFuzzy.setCrispInput('arcPosition', sensor.getNormPhotoArc()); // connects sensors to fuzzy input

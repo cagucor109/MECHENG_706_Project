@@ -1,3 +1,16 @@
+/*
+ *  Implementation of Fuzzy rules
+ *  
+ *  This class provides a framework to establish a relationship between antecedents and consequents.
+ * 
+ *  This class works by creating a matching set of antecendents and consequents, specified by
+ *  the Antecendent and Consequent classes. This implements a rule set as well as an inference engine.
+ * 
+ *  Author: Carlos Aguilera
+ *  Contact: cagu554@aucklanduni.ac.nz
+ * 
+ */
+
 #include "FuzzyRules.h"
 
 // -------------------------- Fuzzy Rules ------------------------- //

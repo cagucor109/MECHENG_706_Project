@@ -1,3 +1,16 @@
+/*
+ *  Implementation of a Fuzzy membership function
+ *  
+ *  This class provides definition for fuzzy membership functions
+ * 
+ *  This class works by specifying four vertices of a membership function. This method
+ *  supports trapezioids, triangles and z/s shapes.
+ * 
+ *  Author: Carlos Aguilera
+ *  Contact: cagu554@aucklanduni.ac.nz
+ * 
+ */
+
 #ifndef FUZZYMEMBER_H
 #define FUZZYMEMBER_H
 

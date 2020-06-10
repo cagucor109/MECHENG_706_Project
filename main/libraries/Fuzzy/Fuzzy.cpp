@@ -1,10 +1,31 @@
+/*
+ *  Implementation of Fuzzy logic control
+ *  
+ *  This class provides an interface to fuzzy logic control.
+ *  To add an input, call the setCrispInput() method.
+ *  To get the output, call the getCrispOutput() method.
+ *  To run the fuuzy control process, call the updateFuzzy() method.
+ * 
+ *  The constructor which takes an integer has a predefined set of inputs, outputs and rules.
+ *  The creation of a custom set of inputs, outputs and rules can be achieved by invoking the
+ *  addRuleSet(), addInput() and addOutput() methods. For more detail on how to create these,
+ *  inspect the FuzzyIO and FuzzyRules files.
+ * 
+ *  Author: Carlos Aguilera
+ *  Contact: cagu554@aucklanduni.ac.nz
+ * 
+ */
+
 #include "Fuzzy.h"    
     
-// Constructors
+// ------------------ Constructors ------------------ //
+
+// default constructor
 Fuzzy::Fuzzy(){
 
 }
 
+// Constructor with predefined inputs, outputs and rules. 1 for moveToFire, 2 for avoidance
 Fuzzy::Fuzzy(int preDef){
     if (preDef == 1){ //moveToFire fuzzy controller
 
@@ -47,6 +68,93 @@ Fuzzy::Fuzzy(int preDef){
         addFuzzyOutput(Z);
 
         // ----------------------- Rules ---------------------- //
+
+        FuzzyRules *R1 = new FuzzyRules();
+        Antecedent *A1 = new Antecedent();
+        Consequent *C1 = new Consequent();
+        (*A1).addAntecedent(arcPosition, front_ap);
+        (*A1).addAntecedent(intensity, far_i);
+        (*C1).addConsequent(Y, fast_y);
+        (*R1).addRule(A1, C1);
+        addRuleSet(R1);
+
+        FuzzyRules *R2 = new FuzzyRules();
+        Antecedent *A2 = new Antecedent();
+        Consequent *C2 = new Consequent();
+        (*A2).addAntecedent(arcPosition, left_ap);
+        (*A2).addAntecedent(intensity, far_i);
+        (*C2).addConsequent(Y, medium_y);
+        (*C2).addConsequent(Z, ccw_z);
+        (*R2).addRule(A2, C2);
+        addRuleSet(R2);
+
+        FuzzyRules *R3 = new FuzzyRules();
+        Antecedent *A3 = new Antecedent();
+        Consequent *C3 = new Consequent();
+        (*A3).addAntecedent(arcPosition, right_ap);
+        (*A3).addAntecedent(intensity, far_i);
+        (*C3).addConsequent(Y, medium_y);
+        (*C3).addConsequent(Z, cw_z);
+        (*R3).addRule(A3, C3);
+        addRuleSet(R3);
+
+        FuzzyRules *R4 = new FuzzyRules();
+        Antecedent *A4 = new Antecedent();
+        Consequent *C4 = new Consequent();
+        (*A4).addAntecedent(arcPosition, front_ap);
+        (*A4).addAntecedent(intensity, close_i);
+        (*C4).addConsequent(Y, medium_y);
+        (*R4).addRule(A4, C4);
+        addRuleSet(R4);
+
+        FuzzyRules *R5 = new FuzzyRules();
+        Antecedent *A5 = new Antecedent();
+        Consequent *C5 = new Consequent();
+        (*A5).addAntecedent(arcPosition, left_ap);
+        (*A5).addAntecedent(intensity, close_i);
+        (*C5).addConsequent(Y, slow_y);
+        (*C5).addConsequent(Z, ccw_z);
+        (*R5).addRule(A5, C5);
+        addRuleSet(R5);
+
+        FuzzyRules *R6 = new FuzzyRules();
+        Antecedent *A6 = new Antecedent();
+        Consequent *C6 = new Consequent();
+        (*A6).addAntecedent(arcPosition, right_ap);
+        (*A6).addAntecedent(intensity, close_i);
+        (*C6).addConsequent(Y, slow_y);
+        (*C6).addConsequent(Z, cw_z);
+        (*R6).addRule(A6, C6);
+        addRuleSet(R6);
+
+        FuzzyRules *R7 = new FuzzyRules();
+        Antecedent *A7 = new Antecedent();
+        Consequent *C7 = new Consequent();
+        (*A7).addAntecedent(arcPosition, front_ap);
+        (*A7).addAntecedent(intensity, medium_i);
+        (*C7).addConsequent(Y, medium_y);
+        (*R7).addRule(A7, C7);
+        addRuleSet(R7);
+
+        FuzzyRules *R8 = new FuzzyRules();
+        Antecedent *A8 = new Antecedent();
+        Consequent *C8 = new Consequent();
+        (*A8).addAntecedent(arcPosition, left_ap);
+        (*A8).addAntecedent(intensity, medium_i);
+        (*C8).addConsequent(Y, slow_y);
+        (*C8).addConsequent(Y, ccw_z);
+        (*R8).addRule(A8, C8);
+        addRuleSet(R8);
+
+        FuzzyRules *R9 = new FuzzyRules();
+        Antecedent *A9 = new Antecedent();
+        Consequent *C9 = new Consequent();
+        (*A9).addAntecedent(arcPosition, right_ap);
+        (*A9).addAntecedent(intensity, medium_i);
+        (*C9).addConsequent(Y, slow_y);
+        (*C9).addConsequent(Y, cw_z);
+        (*R9).addRule(A9, C9);
+        addRuleSet(R9);
 
     } else if (preDef == 2){ // Avoidance fuzzy controller
 
@@ -100,6 +208,111 @@ Fuzzy::Fuzzy(int preDef){
         addFuzzyOutput(Y);
 
         // ----------------------- Rules ---------------------- //
+
+        FuzzyRules *R1 = new FuzzyRules();
+        Antecedent *A1 = new Antecedent();
+        Consequent *C1 = new Consequent();
+        (*A1).addAntecedent(front, critical_f);
+        (*C1).addConsequent(X, right_x);
+        (*C1).addConsequent(Y, stop_y);
+        (*R1).addRule(A1, C1);
+        addRuleSet(R1);
+
+        FuzzyRules *R2 = new FuzzyRules();
+        Antecedent *A2 = new Antecedent();
+        Consequent *C2 = new Consequent();
+        (*A2).addAntecedent(left, critical_l);
+        (*C2).addConsequent(X, left_x);
+        (*C2).addConsequent(Y, stop_y);
+        (*R2).addRule(A2, C2);
+        addRuleSet(R2);
+
+        FuzzyRules *R3 = new FuzzyRules();
+        Antecedent *A3 = new Antecedent();
+        Consequent *C3 = new Consequent();
+        (*A3).addAntecedent(right, critical_r);
+        (*C3).addConsequent(X, left_x);
+        (*C3).addConsequent(Y, stop_y);
+        (*R3).addRule(A3, C3);
+        addRuleSet(R3);
+
+        FuzzyRules *R4 = new FuzzyRules();
+        Antecedent *A4 = new Antecedent();
+        Consequent *C4 = new Consequent();
+        (*A4).addAntecedent(front, critical_f);
+        (*A4).addAntecedent(left, close_l);
+        (*C4).addConsequent(X, right_x);
+        (*C4).addConsequent(Y, stop_y);
+        (*R4).addRule(A4, C4);
+        addRuleSet(R4);
+
+        FuzzyRules *R5 = new FuzzyRules();
+        Antecedent *A5 = new Antecedent();
+        Consequent *C5 = new Consequent();
+        (*A5).addAntecedent(front, critical_f);
+        (*A5).addAntecedent(right, close_r);
+        (*C5).addConsequent(X, left_x);
+        (*C5).addConsequent(Y, stop_y);
+        (*R5).addRule(A5, C5);
+        addRuleSet(R5);
+
+        FuzzyRules *R6 = new FuzzyRules();
+        Antecedent *A6 = new Antecedent();
+        Consequent *C6 = new Consequent();
+        (*A6).addAntecedent(left, close_l);
+        (*A6).addAntecedent(right, close_r);
+        (*C6).addConsequent(X, centre_x);
+        (*C6).addConsequent(Y, slow_y);
+        (*R6).addRule(A6, C6);
+        addRuleSet(R6);
+
+        FuzzyRules *R7 = new FuzzyRules();
+        Antecedent *A7 = new Antecedent();
+        Consequent *C7 = new Consequent();
+        (*A7).addAntecedent(left, critical_l);
+        (*A7).addAntecedent(right, close_r);
+        (*C7).addConsequent(X, centre_x);
+        (*C7).addConsequent(Y, slow_y);
+        (*R7).addRule(A7, C7);
+        addRuleSet(R7);
+
+        FuzzyRules *R8 = new FuzzyRules();
+        Antecedent *A8 = new Antecedent();
+        Consequent *C8 = new Consequent();
+        (*A8).addAntecedent(front, far_f);
+        (*C8).addConsequent(X, centre_x);
+        (*C8).addConsequent(Y, slow_y);
+        (*R8).addRule(A8, C8);
+        addRuleSet(R8);
+
+        FuzzyRules *R9 = new FuzzyRules();
+        Antecedent *A9 = new Antecedent();
+        Consequent *C9 = new Consequent();
+        (*A9).addAntecedent(front, critical_f);
+        (*C9).addConsequent(X, right_x);
+        (*C9).addConsequent(Y, stop_y);
+        (*R9).addRule(A9, C9);
+        addRuleSet(R9);
+
+        FuzzyRules *R10 = new FuzzyRules();
+        Antecedent *A10 = new Antecedent();
+        Consequent *C10 = new Consequent();
+        (*A10).addAntecedent(front, critical_f);
+        (*A10).addAntecedent(left, critical_l);
+        (*A10).addAntecedent(right, critical_r);
+        (*C10).addConsequent(X, centre_x);
+        (*C10).addConsequent(Y, stop_y);
+        (*R10).addRule(A10, C10);
+        addRuleSet(R10);
+
+        FuzzyRules *R11 = new FuzzyRules();
+        Antecedent *A11 = new Antecedent();
+        Consequent *C11 = new Consequent();
+        (*A11).addAntecedent(left, close_l);
+        (*C11).addConsequent(X, right_x);
+        (*C11).addConsequent(Y, stop_y);
+        (*R11).addRule(A11, C11);
+        addRuleSet(R11);
         
     } else{
 
